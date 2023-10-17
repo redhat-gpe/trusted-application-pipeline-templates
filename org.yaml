@@ -1,0 +1,39 @@
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: rhdh
+  description: Red Hat Developer Hub
+spec:
+  type: team
+  profile:
+    # Intentional no displayName for testing
+    email: rhdh@opentlc.com
+    picture: https://avatars.dicebear.com/api/identicon/team-a@example.com.svg?background=%23fff&margin=25
+  children: []
+{% for index in range(0, gitlab_user_count | int, 1) %}
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: user{{ index + 1 }}
+  description: user{{ index + 1 }} group
+spec:
+  type: team
+  profile:
+    # Intentional no displayName for testing
+    email: user{{ index + 1 }}@opentlc.com
+    picture: https://avatars.dicebear.com/api/identicon/team-a@example.com.svg?background=%23fff&margin=25
+  parent: rhdh
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: user{{ index + 1 }}
+spec:
+  profile:
+    # Intentional no displayName for testing
+    email: user{{ index + 1 }}@opentlc.com
+    picture: https://avatars.dicebear.com/api/avataaars/breanna-davison@example.com.svg?background=%23fff
+  memberOf: [user{{ index + 1 }}]
+{% endfor %}

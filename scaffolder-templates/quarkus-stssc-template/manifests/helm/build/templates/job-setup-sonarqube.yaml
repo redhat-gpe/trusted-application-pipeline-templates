@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.app.name }}-sonarqube-setup-job
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  backoffLimit: 100
+  template:
+    spec:
+      containers:
+      - name: create-webhook
+        command:
+          - /bin/bash
+          - '-c'
+          - |
+            set -x
+            ansible-playbook -i localhost /scripts/playbook.yaml -e common_password=$COMMON_PASSWORD
+        image: quay.io/agnosticd/ee-multicloud:latest
+        volumeMounts:
+          - mountPath: /scripts
+            name: {{ .Values.app.name }}-script-vol
+        env:
+          - name: COMMON_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: common-password-secret
+      restartPolicy: Never
+      volumes:
+      - name: {{ .Values.app.name }}-script-vol
+        configMap:
+          name: {{ .Values.app.name }}-sonarqube-setup-script
+      serviceAccount: job-runner

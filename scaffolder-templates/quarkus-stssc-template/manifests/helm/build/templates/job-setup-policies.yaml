@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Values.app.name }}-sonarqube-setup-job
+  name: {{ .Values.app.name }}-policies-setup-job
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
@@ -9,13 +9,16 @@ spec:
   template:
     spec:
       containers:
-      - name: create-sonarqube-project
+      - name: create-policy
         command:
           - /bin/bash
           - '-c'
           - |
             set -x
-            ansible-playbook -i localhost /scripts/playbook.yaml -e sonarqube_url=$SONARQUBE_URL -e sonarqube_password=$COMMON_PASSWORD
+            cd /scripts
+            ansible-playbook -i localhost playbook.yaml \
+            -e central_stackrox_url=$CENTRAL_STACKROX_URL \
+            -e central_stackrox_password=$COMMON_PASSWORD
         image: quay.io/agnosticd/ee-multicloud:latest
         volumeMounts:
           - mountPath: /scripts
@@ -26,11 +29,12 @@ spec:
               secretKeyRef:
                 key: password
                 name: common-password-secret
-          - name: SONARQUBE_URL
-            value: https://sonarqube-sonarqube{{ .Values.app.cluster }}
+          - name: CENTRAL_STACKROX_URL
+            value: https://central-stackrox{{ .Values.app.cluster }}
+
       restartPolicy: Never
       volumes:
       - name: {{ .Values.app.name }}-script-vol
         configMap:
-          name: {{ .Values.app.name }}-sonarqube-setup-script
+          name: {{ .Values.app.name }}-policies-setup-script
       serviceAccount: job-runner

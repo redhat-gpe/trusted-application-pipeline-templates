@@ -6,13 +6,14 @@ data:
   playbook.yaml: |
     - hosts: localhost
       vars:
-        common_password: ''
+        sonarqube_url: ''
+        sonarqube_password: ''
       tasks:
         - name: Does {{ .Values.app.name }} already exist in sonarqube?
           uri:
-            url: "https://sonarqube-sonarqube{{ .Values.app.cluster }}/api/projects/search?projects={{ .Values.app.name }}"
+            url: "{{ "{{" }} sonarqube_url {{ "}}" }}/api/projects/search?projects={{ .Values.app.name }}"
             user: admin
-            password: "{{ "{{" }} common_password {{ "}}" }}"
+            password: "{{ "{{" }} sonarqube_password {{ "}}" }}"
             method: GET
             body_format: json
             headers:
@@ -27,9 +28,9 @@ data:
 
           - name: Create {{ .Values.app.name }} project
             uri:
-              url: "https://sonarqube-sonarqube{{ .Values.app.cluster }}/api/projects/create?name={{ .Values.app.name }}&project={{ .Values.app.name }}"
+              url: "{{ "{{" }} sonarqube_url {{ "}}" }}/api/projects/create?name={{ .Values.app.name }}&project={{ .Values.app.name }}"
               user: admin
-              password: "{{ "{{" }} common_password {{ "}}" }}"
+              password: "{{ "{{" }} sonarqube_password {{ "}}" }}"
               method: POST
               body_format: json
               headers:
@@ -40,9 +41,9 @@ data:
 
           - name: Create {{ .Values.app.name }} project token
             uri:
-              url: "https://sonarqube-sonarqube{{ .Values.app.cluster }}/api/user_tokens/generate?name={{ .Values.app.name }}_token&type=PROJECT_ANALYSIS_TOKEN&projectKey={{ .Values.app.name }}"
+              url: "{{ "{{" }} sonarqube_url {{ "}}" }}/api/user_tokens/generate?name={{ .Values.app.name }}_token&type=PROJECT_ANALYSIS_TOKEN&projectKey={{ .Values.app.name }}"
               user: admin
-              password: "{{ "{{" }} common_password {{ "}}" }}"
+              password: "{{ "{{" }} sonarqube_password {{ "}}" }}"
               method: POST
               headers:
                 Content-Type: application/json

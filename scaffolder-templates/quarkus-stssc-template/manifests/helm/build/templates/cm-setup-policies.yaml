@@ -1,0 +1,147 @@
+kind: ConfigMap
+metadata:
+  name:  {{ .Values.app.name }}-policies-setup-script
+apiVersion: v1
+data:
+  playbook.yaml: |
+    - hosts: localhost
+      vars:
+        central_stackrox_url: ''
+        central_stackrox_password: ''
+      tasks:
+      - name: Get Clusters
+        uri:
+          url: "{{ "{{" }} central_stackrox_url {{ "}}" }}/v1/clusters"
+          user: admin
+          password: "{{ "{{" }} central_stackrox_password {{ "}}" }}"
+          method: GET
+          force_basic_auth: true
+          validate_certs: false
+          body_format: json
+          headers:
+            Content-Type: application/json
+        register: r_cluster_response
+        retries: 60
+        delay: 10
+        until:
+        - r_cluster_response.json is defined
+        - r_cluster_response.json.clusters is defined
+        - r_cluster_response.json.clusters | length > 0
+
+      - name: Cluster response data
+        debug:
+          var: r_cluster_response
+
+      - name: Set JSON Query (cluster)
+        set_fact:
+          _jsonQuery: "[?name=='production']"
+
+      - name: Set dev cluster id {{ "{{" }} _jsonQuery {{ "}}" }}
+        set_fact:
+          _cluster_id: "{{ "{{" }} selected[0].id {{ "}}" }}"
+        vars:
+          selected: >-
+            {{ "{{" }}
+              r_cluster_response.json.clusters | json_query(_jsonQuery)
+            {{ "}}" }}
+
+      - name: Get Signature Integrations
+        uri:
+          url: "{{ "{{" }} central_stackrox_url {{ "}}" }}/v1/signatureintegrations"
+          user: admin
+          password: "{{ "{{" }} central_stackrox_password {{ "}}" }}"
+          method: GET
+          force_basic_auth: true
+          validate_certs: false
+          body_format: json
+          headers:
+            Content-Type: application/json
+        register: r_integrations_response
+        retries: 60
+        delay: 10
+        until:
+        - r_integrations_response.json is defined
+        - r_integrations_response.json.integrations is defined
+        - r_integrations_response.json.integrations | length > 0
+
+      - name: Set signature integration id
+        set_fact:
+          _signature_integration_id: "{{ "{{" }} r_integrations_response.json.integrations[0].id {{ "}}" }}"
+
+      - name: Render template
+        set_fact:
+          _rendered_template: "{{ "{{" }} lookup('template', './signature-policy.json.j2') {{ "}}" }}"
+
+      - name: Create stackrox image signature policy
+        uri:
+          url: "{{ "{{" }} central_stackrox_url {{ "}}" }}/v1/policies"
+          user: admin
+          password: "{{ "{{" }} central_stackrox_password {{ "}}" }}"
+          method: POST
+          force_basic_auth: true
+          validate_certs: false
+          body_format: json
+          headers:
+            Content-Type: application/json
+          body: "{{ "{{" }} _rendered_template {{ "}}" }}"
+  signature-policy.json.j2: |
+    {
+        "name": "0-{{ .Values.app.name }}-signature-policy",
+        "description": "",
+        "rationale": "",
+        "remediation": "",
+        "disabled": false,
+        "categories": [
+            "Security Best Practices"
+        ],
+        "lifecycleStages": [
+            "BUILD",
+            "DEPLOY"
+        ],
+        "eventSource": "NOT_APPLICABLE",
+        "exclusions": [],
+        "scope": [
+            {
+                "cluster": "{{ "{{" }} _cluster_id {{ "}}" }}",
+                "namespace": "{{ .Values.app.name }}-preprod",
+                "label": null
+            },
+            {
+                "cluster": "{{ "{{" }} _cluster_id {{ "}}" }}",
+                "namespace":"{{ .Values.app.name }}-prod",
+                "label": null
+            }
+        ],
+        "severity": "HIGH_SEVERITY",
+        "enforcementActions": [
+            "FAIL_BUILD_ENFORCEMENT",
+            "SCALE_TO_ZERO_ENFORCEMENT",
+            "UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT"
+        ],
+        "notifiers": [],
+        "SORTName": "0-{{ .Values.app.name }}",
+        "SORTLifecycleStage": "BUILD,DEPLOY",
+        "SORTEnforcement": true,
+        "policyVersion": "1.1",
+        "policySections": [
+            {
+                "sectionName": "Policy Section 1",
+                "policyGroups": [
+                    {
+                        "fieldName": "Image Signature Verified By",
+                        "booleanOperator": "OR",
+                        "negate": false,
+                        "values": [
+                            {
+                                "value": "{{ "{{" }} _signature_integration_id {{ "}}" }}"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "mitreAttackVectors": [],
+        "criteriaLocked": false,
+        "mitreVectorsLocked": false,
+        "isDefault": false
+    }

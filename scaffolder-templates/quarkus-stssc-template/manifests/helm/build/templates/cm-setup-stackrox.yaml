@@ -1,6 +1,6 @@
 kind: ConfigMap
 metadata:
-  name:  {{ .Values.app.name }}-policies-setup-script
+  name:  {{ .Values.app.name }}-stackrox-setup-script
 apiVersion: v1
 data:
   playbook.yaml: |

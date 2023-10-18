@@ -93,23 +93,20 @@ spec:
       - name: repository
         workspace: source-folder
     - name: build-sign-image
-      retries: 1
       params:
-      - name: TLSVERIFY
-        value: 'false'
-      - name: BUILD_EXTRA_ARGS
-        value: --ulimit=nofile=4096:4096
       - name: IMAGE
         value: $(params.output-image)
       runAfter:
-        - scan-source
-        - generate-sbom
+      - scan-source
+      - generate-sbom
       taskRef:
-        kind: ClusterTask
-        name: buildah
+        kind: Task
+        name: kaniko
       workspaces:
-        - name: source
-          workspace: source-folder
+      - name: source
+        workspace: source-folder
+      - name: dockerconfig
+        workspace: docker-config
     - name: acs-image-check
       params:
       - name: rox_central_endpoint
@@ -117,7 +114,11 @@ spec:
       - name: rox_api_token
         value: $(params.stackrox-secret)
       - name: image
+{{- if eq .Values.image.registry "Quay" }}
         value: $(params.output-image)
+{{- else }}
+        value: default-route-openshift-image-registry{{ .Values.app.cluster }}/{{ .Values.app.name }}-dev/{{ .Values.app.name }}
+{{- end }}
       - name: insecure-skip-tls-verify
         value: "true"
       runAfter:
@@ -132,7 +133,11 @@ spec:
       - name: rox_api_token
         value: $(params.stackrox-secret)
       - name: image
+{{- if eq .Values.image.registry "Quay" }}
         value: $(params.output-image)
+{{- else }}
+        value: default-route-openshift-image-registry{{ .Values.app.cluster }}/{{ .Values.app.name }}-dev/{{ .Values.app.name }}
+{{- end }}
       - name: insecure-skip-tls-verify
         value: "true"
       runAfter:

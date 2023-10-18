@@ -21,9 +21,6 @@ spec:
         labels:
           backstage.io/kubernetes-id: {{ .Values.app.name }}
       spec:
-        taskRunSpecs:
-          - pipelineTaskName: build-sign-image
-            taskServiceAccountName: image-signer
         params:
           - name: source-repo
             value: $(tt.params.git-repo-url)

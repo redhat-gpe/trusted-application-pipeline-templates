@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Values.app.name }}-policies-setup-job
+  name: {{ .Values.app.name }}-stackrox-setup-job
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
@@ -9,7 +9,7 @@ spec:
   template:
     spec:
       containers:
-      - name: create-policy
+      - name: setup-stackrox
         command:
           - /bin/bash
           - '-c'

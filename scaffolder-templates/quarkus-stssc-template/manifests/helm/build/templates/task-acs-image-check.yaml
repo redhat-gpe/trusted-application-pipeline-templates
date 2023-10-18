@@ -41,6 +41,7 @@ spec:
     script: |
       #!/usr/bin/env bash
       set +x
+      IMAGE=$(echo '$(params.image)' | grep -i ':' >> /dev/null && echo '$(params.image)' || echo '$(params.image):latest')
       curl -s -k -L -H "Authorization: Bearer $ROX_API_TOKEN" \
         "https://$(params.rox_central_endpoint)/api/cli/download/roxctl-linux" \
         --output ./roxctl  \
@@ -49,4 +50,4 @@ spec:
       ./roxctl image check \
         $( [ "$(params.insecure-skip-tls-verify)" = "true" ] && \
         echo -n "--insecure-skip-tls-verify") \
-        -e "$(params.rox_central_endpoint)" --image "$(params.image)"
+        -e "$(params.rox_central_endpoint)" --image "$IMAGE"

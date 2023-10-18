@@ -84,6 +84,40 @@ data:
           headers:
             Content-Type: application/json
           body: "{{ "{{" }} _rendered_template {{ "}}" }}"
+
+{{- if ne .Values.image.registry "Quay" }}
+
+      - name: Get registry-admin token
+        shell: |
+          oc get secret $(oc get secret -n {{ .Values.app.name }}-dev | grep registry-admin-token | awk '{print $1}') \
+          -n {{ .Values.app.name }}-dev -o json | jq -r .data.token | base64 --decode
+        register: r_token
+
+      - name: Stackrox internal registry integration
+        uri:
+          url: "{{ "{{" }} central_stackrox_url {{ "}}" }}/v1/imageintegrations"
+          user: admin
+          password: "{{ "{{" }} central_stackrox_password {{ "}}" }}"
+          method: POST
+          force_basic_auth: true
+          validate_certs: false
+          body_format: json
+          headers:
+            Content-Type: application/json
+          body: >-
+            {
+            "name": "registry-admin-{{ .Values.app.name }}",
+            "type": "docker",
+            "categories": ["REGISTRY"],
+            "docker": {
+            "endpoint": "default-route-openshift-image-registry{{ .Values.app.cluster }}"
+            "username": "registry-admin",
+            "password": "{{ "{{" }} r_token.stdout {{ "}}" }}",
+            "insecure": true
+            },
+            "skipTestIntegration": false
+            }
+{{- end }}
   signature-policy.json.j2: |
     {
         "name": "0-{{ .Values.app.name }}-signature-policy",

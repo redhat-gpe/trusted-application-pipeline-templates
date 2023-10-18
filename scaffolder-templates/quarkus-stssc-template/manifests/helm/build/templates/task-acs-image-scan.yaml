@@ -43,7 +43,7 @@ spec:
       set +x
 {{- if ne .Values.image.registry "Quay" }}
       REPO=$(cut -d "/" -f2- <<< "$(params.image)")
-      IMAGE=default-route-openshift-image-registry{{ .Values.app.cluster }}/$REPO:latest
+      IMAGE=default-route-openshift-image-registry{{ .Values.app.cluster }}/$REPO\:latest
 {{- else }}
       IMAGE=$(params.image):latest
 {{- end }}

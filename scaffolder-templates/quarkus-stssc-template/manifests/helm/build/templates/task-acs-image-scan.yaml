@@ -42,11 +42,10 @@ spec:
       #!/usr/bin/env bash
       set +x
 {{- if ne .Values.image.registry "Quay" }}
-      TAG=$(echo '$(params.image)' | grep -i ':' >> /dev/null && echo '' || echo ':latest')
       REPO=$(cut -d "/" -f2- <<< "$(params.image)")
-      IMAGE=default-route-openshift-image-registry{{ .Values.app.cluster }}/$REPO$TAG
+      IMAGE=default-route-openshift-image-registry{{ .Values.app.cluster }}/$REPO:latest
 {{- else }}
-      IMAGE=$(params.image)
+      IMAGE=$(params.image):latest
 {{- end }}
       curl -s -k -L -H "Authorization: Bearer $ROX_API_TOKEN" \
         "https://$(params.rox_central_endpoint)/api/cli/download/roxctl-linux" \

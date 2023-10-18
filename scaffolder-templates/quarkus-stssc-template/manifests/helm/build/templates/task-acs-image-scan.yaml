@@ -55,4 +55,4 @@ spec:
       ./roxctl image scan \
         $( [ "$(params.insecure-skip-tls-verify)" = "true" ] && \
         echo -n "--insecure-skip-tls-verify") \
-        -e "$(params.rox_central_endpoint)" --image "$IMAGE"
+        -e "$(params.rox_central_endpoint)" --image "$IMAGE" --force

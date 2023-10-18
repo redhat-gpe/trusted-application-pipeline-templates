@@ -93,6 +93,10 @@ data:
           -n {{ .Values.app.name }}-dev -o json | jq -r .data.token | base64 --decode
         register: r_token
 
+      - name: Token
+        set_fact:
+          _token: "{{ "{{" }} r_token.stdout {{ "}}" }}"
+
       - name: Stackrox internal registry integration
         uri:
           url: "{{ "{{" }} central_stackrox_url {{ "}}" }}/v1/imageintegrations"
@@ -112,12 +116,13 @@ data:
             "docker": {
             "endpoint": "default-route-openshift-image-registry{{ .Values.app.cluster }}",
             "username": "registry-admin",
-            "password": "{{ "{{" }} r_token.stdout {{ "}}" }}",
+            "password": "{{ "{{" }} _token {{ "}}" }}",
             "insecure": true
             },
             "skipTestIntegration": false
             }
 {{- end }}
+
   signature-policy.json.j2: |
     {
         "name": "0-{{ .Values.app.name }}-signature-policy",

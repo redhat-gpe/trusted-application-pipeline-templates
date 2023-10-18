@@ -36,5 +36,5 @@ spec:
       volumes:
       - name: {{ .Values.app.name }}-script-vol
         configMap:
-          name: {{ .Values.app.name }}-policies-setup-script
+          name: {{ .Values.app.name }}-stackrox-setup-script
       serviceAccount: job-runner

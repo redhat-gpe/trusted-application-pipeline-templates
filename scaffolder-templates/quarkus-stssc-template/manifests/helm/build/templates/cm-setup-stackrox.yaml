@@ -110,7 +110,7 @@ data:
             "type": "docker",
             "categories": ["REGISTRY"],
             "docker": {
-            "endpoint": "default-route-openshift-image-registry{{ .Values.app.cluster }}"
+            "endpoint": "default-route-openshift-image-registry{{ .Values.app.cluster }}",
             "username": "registry-admin",
             "password": "{{ "{{" }} r_token.stdout {{ "}}" }}",
             "insecure": true

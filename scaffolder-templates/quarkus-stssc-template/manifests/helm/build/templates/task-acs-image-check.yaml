@@ -45,12 +45,7 @@ spec:
     script: |
       #!/usr/bin/env bash
       set +x
-{{- if ne .Values.image.registry "Quay" }}
-      REPO=$(cut -d "/" -f2- <<< "$(params.image)")
-      IMAGE=default-route-openshift-image-registry{{ .Values.app.cluster }}/$REPO\@$(params.image_digest)
-{{- else }}
       IMAGE=$(params.image)@$(params.image_digest)
-{{- end }}
       curl -s -k -L -H "Authorization: Bearer $ROX_API_TOKEN" \
         "https://$(params.rox_central_endpoint)/api/cli/download/roxctl-linux" \
         --output ./roxctl  \

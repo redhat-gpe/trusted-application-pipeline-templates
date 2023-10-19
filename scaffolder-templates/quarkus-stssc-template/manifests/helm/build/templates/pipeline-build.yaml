@@ -158,17 +158,28 @@ spec:
         name: acs-deploy-check
       runAfter:
       - build-sign-image
+    - name: query-rekor-signed-provenance
+      params:
+      - name: imageDigest
+        value: $(tasks.build-sign-image.results.IMAGE_DIGEST)
+      taskRef:
+        kind: Task
+        name: rekor-signed-provenance
+      runAfter:
+      - build-sign-image
     - name: resync
       params:
-        - name: COMPONENT_ID
-          value: $(params.component-id)
+      - name: COMPONENT_ID
+        value: $(params.component-id)
       runAfter:
-        - acs-image-check
-        - acs-image-scan
-        - acs-deploy-check
+      - acs-image-check
+      - acs-image-scan
+      - acs-deploy-check
+      - query-rekor-signed-provenance
       taskRef:
         kind: Task
         name: resync
+
   workspaces:
     - name: source-folder
     - name: maven-settings

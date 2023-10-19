@@ -117,6 +117,8 @@ spec:
         value: $(params.output-image)
       - name: insecure-skip-tls-verify
         value: "true"
+      - name: image_digest
+        value: $(tasks.build-sign-image.results.IMAGE_DIGEST)
       runAfter:
       - build-sign-image
       taskRef:
@@ -132,6 +134,8 @@ spec:
         value: $(params.output-image)
       - name: insecure-skip-tls-verify
         value: "true"
+      - name: image_digest
+        value: $(tasks.build-sign-image.results.IMAGE_DIGEST)
       runAfter:
       - build-sign-image
       taskRef:

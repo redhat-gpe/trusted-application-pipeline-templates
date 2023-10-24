@@ -25,7 +25,8 @@ spec:
 
         printf "%s" "$LOCATION" > "$(results.sbomUrl.path)"
 
-        echo "SBOM URL accessible on Results of TaskRun $(context.taskRun.name)"
+        echo "SBOM link..."
+        echo $LOCATION
       workingDir: /workspace/repository
     - image: 'quay.io/redhat-gpte/grype:0.65.2'
       name: scan-sbom

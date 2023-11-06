@@ -80,18 +80,6 @@ spec:
       workspaces:
       - name: repository
         workspace: source-folder
-    - name: generate-sbom
-      params:
-      - name: cyclonedxHostUrl
-        value: $(params.cyclonedx-host-url)
-      runAfter:
-      - package
-      taskRef:
-        kind: Task
-        name: generate-sbom
-      workspaces:
-      - name: repository
-        workspace: source-folder
     - name: build-sign-image
       params:
       - name: IMAGE

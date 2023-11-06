@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: scan-publish-sbom
+  name: scan-export-sbom
 spec:
   params:
   - default: https://cyclonedx-bom-repo-server-cyclonedx.apps.cluster-tr47n.tr47n.sandbox987.opentlc.com/

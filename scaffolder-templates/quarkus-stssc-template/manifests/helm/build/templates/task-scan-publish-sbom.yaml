@@ -23,6 +23,23 @@ spec:
         - --output-file
         - bom.json
       workingDir: /workspace/repository
+    - image: 'ubi9/ubi'
+      name: publish-sbom
+      resources:
+        requests:
+          memory: 1Gi
+      script: >
+        set +x
+
+        curl -X POST $(params.cyclonedxHostUrl)/v1/bom -H "Content-Type: application/vnd.cyclonedx+json; version=1.4" -H "Accept: */*" -d @bom.json -D /tmp/header.txt > /dev/null
+
+        LOCATION=$(cat /tmp/header.txt | grep location: | awk '{print $2}' | sed 's|http:|https:|g')
+
+        echo $LOCATION
+
+        printf "%s" "$LOCATION" > "$(results.sbomUrl.path)"
+
+      workingDir: /workspace/repository
     - image: 'quay.io/redhat-gpte/grype:0.65.2'
       name: scan-sbom
       resources:
@@ -32,21 +49,6 @@ spec:
         set -x
 
         grype sbom:./bom.json -o table
-      workingDir: /workspace/repository
-    - image: 'ubi9/ubi'
-      name: publish-sbom
-      resources:
-        requests:
-          memory: 1Gi
-      script: >
-        curl -X POST $(params.cyclonedxHostUrl)/v1/bom -H "Content-Type: application/vnd.cyclonedx+json; version=1.4" -H "Accept: */*" -d @bom.json -D /tmp/header.txt
-
-        LOCATION=$(cat /tmp/header.txt | grep location: | awk '{print $2}' | sed 's|http:|https:|g')
-
-        printf "%s" "$LOCATION" > "$(results.sbomUrl.path)"
-
-        echo "SBOM link..."
-        echo $LOCATION
       workingDir: /workspace/repository
   workspaces:
   - name: repository

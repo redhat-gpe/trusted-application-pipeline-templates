@@ -39,13 +39,14 @@ spec:
         requests:
           memory: 1Gi
       script: >
+        set +x
+
         curl -X POST $(params.cyclonedxHostUrl)/v1/bom -H "Content-Type: application/vnd.cyclonedx+json; version=1.4" -H "Accept: */*" -d @bom.json -D /tmp/header.txt
 
         LOCATION=$(cat /tmp/header.txt | grep location: | awk '{print $2}' | sed 's|http:|https:|g')
 
         printf "%s" "$LOCATION" > "$(results.sbomUrl.path)"
 
-        echo "SBOM link..."
         echo $LOCATION
       workingDir: /workspace/repository
   workspaces:

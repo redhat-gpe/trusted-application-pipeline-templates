@@ -24,7 +24,7 @@ spec:
         - bom.json
       workingDir: /workspace/repository
     - image: 'ubi9/ubi'
-      name: publish-sbom
+      name: export-sbom
       resources:
         requests:
           memory: 1Gi

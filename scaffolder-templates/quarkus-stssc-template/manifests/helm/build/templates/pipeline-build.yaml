@@ -147,7 +147,7 @@ spec:
         name: acs-deploy-check
       runAfter:
       - build-sign-image
-    - name: scan-publish-sbom
+    - name: scan-export-sbom
       params:
       - name: cyclonedxHostUrl
         value: $(params.cyclonedx-host-url)
@@ -159,7 +159,7 @@ spec:
       - acs-deploy-check
       taskRef:
         kind: Task
-        name: scan-publish-sbom
+        name: scan-export-sbom
       workspaces:
       - name: repository
         workspace: source-folder
@@ -179,7 +179,7 @@ spec:
       - name: COMPONENT_ID
         value: $(params.component-id)
       runAfter:
-      - scan-publish-sbom
+      - scan-export-sbom
       - query-rekor-signed-provenance
       taskRef:
         kind: Task

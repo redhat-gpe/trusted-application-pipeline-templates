@@ -9,7 +9,7 @@ metadata:
     argocd/app-name: ${{values.component_id}}-dev
     backstage.io/kubernetes-id: ${{values.component_id}}
     backstage.io/kubernetes-namespace: ${{values.component_id}}-dev
-    janus-idp.io/tekton-enabled : 'true'
+    janus-idp.io/tekton: ${{values.component_id}}
     backstage.io/source-location: url:https://${{values.host}}/${{values.destination}}
     backstage.io/techdocs-ref: url:https://${{values.host}}/${{values.destination}}
     gitlab.com/project-slug: ${{values.destination}}

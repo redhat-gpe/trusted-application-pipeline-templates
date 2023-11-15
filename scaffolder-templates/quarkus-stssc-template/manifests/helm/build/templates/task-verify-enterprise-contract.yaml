@@ -40,7 +40,7 @@ spec:
   volumes:
     - name: docker-config
       secret:
-        secretName: $(params.COMPONENT_ID)
+        secretName: $(params.COMPONENT_ID)-docker-config
         items:
         - key: .dockerconfigjson
           path: config.json

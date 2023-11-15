@@ -25,6 +25,11 @@ spec:
         labels:
           backstage.io/kubernetes-id: {{ .Values.app.name }}
       spec:
+{{- if eq .Values.image.registry "Quay" }}
+        taskRunSpecs:
+        - pipelineTaskName: verify-enterprise-contract
+          taskServiceAccountName: job-runner
+{{- end }}
         params:
           - name: source-image
             value: $(tt.params.source-image)

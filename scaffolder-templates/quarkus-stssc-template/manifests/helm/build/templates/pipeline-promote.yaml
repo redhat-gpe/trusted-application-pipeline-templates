@@ -41,6 +41,15 @@ spec:
       type: string
   tasks:
 {{- if eq .Values.image.registry "Quay" }}
+    - name: verify-enterprise-contract
+      params:
+        - name: IMAGE
+          value: '$(params.source-image):$(params.source-image-tag)'
+        - name: NAMESPACE
+          value: $(params.namespace)
+      taskRef:
+        kind: Task
+        name: verify-enterprise-contract
     - name: quay-tag-promote
       params:
         - name: srcImageURL
@@ -54,6 +63,8 @@ spec:
       taskRef:
         kind: ClusterTask
         name: skopeo-copy
+      runAfter:
+        - verify-enterprise-contract
       workspaces:
         - name: images-url
           workspace: images-url

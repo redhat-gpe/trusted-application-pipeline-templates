@@ -46,7 +46,7 @@ spec:
         - name: IMAGE
           value: '$(params.source-image):$(params.source-image-tag)'
         - name: NAMESPACE
-          value: $(params.namespace)
+          value: {{ .Release.Namespace }}
       taskRef:
         kind: Task
         name: verify-enterprise-contract

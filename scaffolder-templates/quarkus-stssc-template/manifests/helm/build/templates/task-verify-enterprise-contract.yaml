@@ -31,7 +31,7 @@ spec:
   params:
     - name: IMAGE
       type: string
-    - name: NAMESPACE
+    - name: COMPONENT_ID
       type: string
     - name: STRICT
       type: string
@@ -40,7 +40,7 @@ spec:
   volumes:
     - name: docker-config
       secret:
-        secretName: my-quarkus-app-docker-config
+        secretName: $(params.COMPONENT_ID)
         items:
         - key: .dockerconfigjson
           path: config.json
@@ -63,7 +63,7 @@ spec:
         - "--image"
         - "$(params.IMAGE)"
         - "--public-key"
-        - "k8s://$(params.NAMESPACE)/signing-secrets"
+        - "k8s://$(params.COMPONENT_ID)-dev/signing-secrets"
         - "--ignore-rekor"
         - "--output"
         - "appstudio=$(results.TEST_OUTPUT.path)"

@@ -93,6 +93,12 @@ spec:
         items:
         - key: .dockerconfigjson
           path: config.json
+
+  stepTemplate:
+    env:
+      - name: HOME
+        value: "$(params.HOMEDIR)"
+
   steps:
     - args:
         - >-
@@ -144,7 +150,7 @@ spec:
         - "json=$(params.HOMEDIR)/report-json.json"
       volumeMounts:
       - name: docker-config
-        mountPath: .docker
+        mountPath: $(params.HOMEDIR)/.docker
     - name: report
       image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:4376ceeeac493da74927c10c1c23a4fc5278f48a3e4ce9e4c75928c1bbba4ccd
       command: [cat]

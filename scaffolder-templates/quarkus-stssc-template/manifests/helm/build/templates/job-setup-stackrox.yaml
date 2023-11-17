@@ -18,7 +18,9 @@ spec:
             cd /scripts
             ansible-playbook -i localhost playbook.yaml \
             -e central_stackrox_url=$CENTRAL_STACKROX_URL \
-            -e central_stackrox_password=$COMMON_PASSWORD
+            -e central_stackrox_password=$COMMON_PASSWORD \
+            -e component_id={{ .Values.app.name }} \
+            -e apps_domain={{ .Values.app.cluster }}
         image: quay.io/agnosticd/ee-multicloud:latest
         volumeMounts:
           - mountPath: /scripts

@@ -8,6 +8,8 @@ data:
       vars:
         central_stackrox_url: ''
         central_stackrox_password: ''
+        component_id: ''
+        apps_domain: ''
       tasks:
       - name: Get Clusters
         uri:
@@ -28,17 +30,13 @@ data:
         - r_cluster_response.json.clusters is defined
         - r_cluster_response.json.clusters | length > 0
 
-      - name: Cluster response data
-        debug:
-          var: r_cluster_response
-
-      - name: Set JSON Query (cluster)
+      - name: Set JSON Query
         set_fact:
           _jsonQuery: "[?name=='production']"
 
       - name: Set dev cluster id {{ "{{" }} _jsonQuery {{ "}}" }}
         set_fact:
-          _cluster_id: "{{ "{{" }} selected[0].id {{ "}}" }}"
+          cluster_id: "{{ "{{" }} selected[0].id {{ "}}" }}"
         vars:
           selected: >-
             {{ "{{" }}
@@ -66,31 +64,58 @@ data:
 
       - name: Set signature integration id
         set_fact:
-          _signature_integration_id: "{{ "{{" }} r_integrations_response.json.integrations[0].id {{ "}}" }}"
+          signature_integration_id: "{{ "{{" }} r_integrations_response.json.integrations[0].id {{ "}}" }}"
 
-      - name: Render template
-        set_fact:
-          _rendered_template: "{{ "{{" }} lookup('template', './signature-policy.json.j2') {{ "}}" }}"
-
-      - name: Create stackrox image signature policy
+      - name: Get Policies
         uri:
           url: "{{ "{{" }} central_stackrox_url {{ "}}" }}/v1/policies"
           user: admin
           password: "{{ "{{" }} central_stackrox_password {{ "}}" }}"
-          method: POST
+          method: GET
           force_basic_auth: true
           validate_certs: false
           body_format: json
           headers:
             Content-Type: application/json
-          body: "{{ "{{" }} _rendered_template {{ "}}" }}"
+        register: r_policies
+        retries: 60
+        delay: 10
+        until:
+        - r_policies.json is defined
+
+      - name: Get policy ID
+        set_fact:
+          policy_id: "{{ "{{" }} item.id {{ "}}" }}"
+        with_items: "{{ "{{" }} r_policies.json.policies {{ "}}" }}"
+        when: item.name == "0-Trusted-Signature-Policy"
+
+      - name: Policy not created
+        when: policy_id is not defined
+        block:
+        - name: Read policy payload
+          set_fact:
+            policy_payload: "{{ "{{" }} lookup('template', './signature-policy.json.j2', convert_data=False) | string {{ "}}" }}"
+
+        - name: Create stackrox image signature policy
+          uri:
+            url: "{{ "{{" }} central_stackrox_url {{ "}}" }}/v1/policies"
+            user: admin
+            password: "{{ "{{" }} central_stackrox_password {{ "}}" }}"
+            method: POST
+            force_basic_auth: true
+            validate_certs: false
+            body_format: json
+            headers:
+              Content-Type: application/json
+            body: "{{ "{{" }} policy_payload {{ "}}" }}"
+          ignore_errors: true
 
 {{- if ne .Values.image.registry "Quay" }}
 
       - name: Get registry-admin token
         shell: |
-          oc get secret $(oc get secret -n {{ .Values.app.name }}-dev | grep registry-admin-token | awk '{print $1}') \
-          -n {{ .Values.app.name }}-dev -o json | jq -r .data.token | base64 --decode
+          oc get secret $(oc get secret -n {{ "{{" }} component_id {{ "}}" }}-dev | grep registry-admin-token | awk '{print $1}') \
+          -n {{ "{{" }} component_id {{ "}}" }}-dev -o json | jq -r .data.token | base64 --decode
         register: r_token
 
       - name: Token
@@ -110,11 +135,11 @@ data:
             Content-Type: application/json
           body: >-
             {
-            "name": "registry-admin-{{ .Values.app.name }}",
+            "name": "registry-admin-{{ "{{" }} component_id {{ "}}" }}",
             "type": "docker",
             "categories": ["REGISTRY"],
             "docker": {
-            "endpoint": "default-route-openshift-image-registry{{ .Values.app.cluster }}",
+            "endpoint": "default-route-openshift-image-registry{{ "{{" }} apps_domain {{ "}}" }}",
             "username": "registry-admin",
             "password": "{{ "{{" }} _token {{ "}}" }}",
             "insecure": true
@@ -123,9 +148,68 @@ data:
             }
 {{- end }}
 
+      - name: Policy created
+        when: policy_id is defined
+        block:
+        - name: Get Policy
+          uri:
+            url: "{{ "{{" }} central_stackrox_url {{ "}}" }}/v1/policies/{{ "{{" }} policy_id {{ "}}" }}"
+            user: admin
+            password: "{{ "{{" }} central_stackrox_password {{ "}}" }}"
+            method: GET
+            force_basic_auth: true
+            validate_certs: false
+            body_format: json
+            headers:
+              Content-Type: application/json
+          register: r_policy
+          retries: 60
+          delay: 10
+          until:
+          - r_policy.json is defined
+
+        - name: Add new key / value pairs to dict
+          set_fact:
+            extra_scopes:
+            - cluster: "{{ "{{" }} cluster_id {{ "}}" }}"
+              namespace: "{{ "{{" }} component_id {{ "}}" }}-preprod"
+              label: null
+            - cluster: "{{ "{{" }} cluster_id {{ "}}" }}"
+              namespace: "{{ "{{" }} component_id {{ "}}" }}-prod"
+              label: null
+
+        - name: Add new key / value pairs to dict
+          set_fact:
+            extra_scopes: "{{ "{{" }} r_policy.json.scope + extra_scopes {{ "}}" }}"
+
+        - name: Read into fact
+          ansible.builtin.set_fact:
+            policy_fact: "{{ "{{" }} r_policy.json {{ "}}" }}"
+
+        - name: Update the fact
+          ansible.utils.update_fact:
+            updates:
+              - path: policy_fact.scope
+                value: "{{ "{{" }} extra_scopes {{ "}}" }}"
+          register: updated_policy_fact
+
+        - name: Update stackrox image signature policy
+          uri:
+            url: "{{ "{{" }} central_stackrox_url {{ "}}" }}/v1/policies/{{ "{{" }} policy_id {{ "}}" }}"
+            user: admin
+            password: "{{ "{{" }} central_stackrox_password {{ "}}" }}"
+            method: PUT
+            force_basic_auth: true
+            validate_certs: false
+            body_format: json
+            headers:
+              Content-Type: application/json
+            body: "{{ "{{" }} updated_policy_fact.policy_fact {{ "}}" }}"
+          ignore_errors: true
+
   signature-policy.json.j2: |
     {
-        "name": "0-{{ .Values.app.name }}-signature-policy",
+        "name": "0-Trusted-Signature-Policy",
         "description": "",
         "rationale": "",
         "remediation": "",
@@ -141,13 +225,13 @@ data:
         "exclusions": [],
         "scope": [
             {
-                "cluster": "{{ "{{" }} _cluster_id {{ "}}" }}",
-                "namespace": "{{ .Values.app.name }}-preprod",
+                "cluster": "{{ "{{" }} cluster_id {{ "}}" }}",
+                "namespace": "{{ "{{" }} component_id {{ "}}" }}-preprod",
                 "label": null
             },
             {
-                "cluster": "{{ "{{" }} _cluster_id {{ "}}" }}",
-                "namespace":"{{ .Values.app.name }}-prod",
+                "cluster": "{{ "{{" }} cluster_id {{ "}}" }}",
+                "namespace": "{{ "{{" }} component_id {{ "}}" }}-prod",
                 "label": null
             }
         ],
@@ -158,7 +242,7 @@ data:
             "UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT"
         ],
         "notifiers": [],
-        "SORTName": "0-{{ .Values.app.name }}",
+        "SORTName": "0-Trusted-Signature-Policy",
         "SORTLifecycleStage": "BUILD,DEPLOY",
         "SORTEnforcement": true,
         "policyVersion": "1.1",
@@ -172,7 +256,7 @@ data:
                         "negate": false,
                         "values": [
                             {
-                                "value": "{{ "{{" }} _signature_integration_id {{ "}}" }}"
+                                "value": "{{ "{{" }} signature_integration_id {{ "}}" }}"
                             }
                         ]
                     }

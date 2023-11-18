@@ -39,7 +39,7 @@ spec:
       type: string
       description: >-
         Skip Rekor transparency log checks during validation.
-      default: "true"
+      default: "false"
 
     - name: TUF_MIRROR
       type: string
@@ -98,11 +98,19 @@ spec:
         items:
         - key: .dockerconfigjson
           path: config.json
+    - name: rekor-public-key
+      secret:
+        secretName: rekor-public-key
+        items:
+        - key: public.key
+          path: public.key
 
   stepTemplate:
     env:
       - name: HOME
         value: "$(params.HOMEDIR)"
+      - name: SIGSTORE_REKOR_PUBLIC_KEY
+        value: /rekor/public.key
 
   steps:
     - args:
@@ -158,6 +166,8 @@ spec:
       volumeMounts:
       - name: docker-config
         mountPath: $(params.HOMEDIR)/.docker
+      - name: rekor-public-key
+        mountPath: /rekor
     - name: report
       image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:4376ceeeac493da74927c10c1c23a4fc5278f48a3e4ce9e4c75928c1bbba4ccd
       command: [cat]

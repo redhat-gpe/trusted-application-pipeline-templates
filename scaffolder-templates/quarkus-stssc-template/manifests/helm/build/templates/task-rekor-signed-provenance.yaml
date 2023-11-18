@@ -21,4 +21,4 @@ spec:
       script: >
         set -x
 
-        cat /workspace/rekor.get | jq -r .Attestation | jq .
+        cat /workspace/rekor.get | jq -r .

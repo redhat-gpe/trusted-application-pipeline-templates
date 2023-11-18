@@ -39,7 +39,7 @@ spec:
     - description: ArgoCD host
       name: argocd-host
       type: string
-      name: rekor-host
+    - name: rekor-host
       type: string
   tasks:
 {{- if eq .Values.image.registry "Quay" }}

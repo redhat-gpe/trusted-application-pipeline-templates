@@ -77,6 +77,11 @@ spec:
       description: Run policy checks with the provided time.
       default: "now"
 
+    - name: REKOR_HOST
+      type: string
+      description: Rekor host for transparency log lookups
+      default: https://rekor.sigstore.dev
+
   workspaces:
     - name: data
       description: The workspace where the snapshot spec json file resides
@@ -132,6 +137,8 @@ spec:
         - "$(params.IMAGE)"
         - "--public-key"
         - "/workspace/cosign.pub"
+        - "--rekor-url"
+        - "$(params.REKOR_HOST)"
         - "--ignore-rekor=$(params.IGNORE_REKOR)"
         # NOTE: The syntax below is required to negate boolean parameters
         - "--info=$(params.INFO)"

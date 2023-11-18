@@ -51,6 +51,8 @@ spec:
             value: common-password-secret
           - name: argocd-host
             value: argocd-server-janus-argocd{{ .Values.app.cluster }}
+          - name: rekor-host
+            value: http://rekor-server.rekor.svc
         pipelineRef:
           name: {{ .Values.app.name }}-promote
         serviceAccountName: image-pusher

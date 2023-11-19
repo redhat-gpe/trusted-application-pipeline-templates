@@ -48,6 +48,8 @@ spec:
             value: {{ .Values.app.name }}
           - name: common-password-secret
             value: common-password-secret
+          - name: rekor-url
+            value: http://rekor-server.rekor.svc
         pipelineRef:
           name: {{ .Values.app.name }}-build
         serviceAccountName: pipeline

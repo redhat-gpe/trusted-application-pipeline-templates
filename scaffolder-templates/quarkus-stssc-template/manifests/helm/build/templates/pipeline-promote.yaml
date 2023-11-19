@@ -39,6 +39,8 @@ spec:
     - description: ArgoCD host
       name: argocd-host
       type: string
+    - name: rekor-host
+      type: string
   tasks:
 {{- if eq .Values.image.registry "Quay" }}
     - name: verify-enterprise-contract
@@ -47,6 +49,8 @@ spec:
           value: '$(params.source-image):$(params.source-image-tag)'
         - name: COMPONENT_ID
           value: {{ .Values.app.name }}
+        - name: REKOR_HOST
+          value: '$(params.rekor-host)'
       taskRef:
         kind: Task
         name: verify-enterprise-contract

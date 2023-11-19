@@ -40,6 +40,8 @@ spec:
       type: string
     - name: common-password-secret
       type: string
+    - name: rekor-url
+      type: string
   tasks:
     - name: git-clone
       params:
@@ -167,6 +169,8 @@ spec:
       params:
       - name: imageDigest
         value: $(tasks.build-sign-image.results.IMAGE_DIGEST)
+      - name: rekorUrl
+        value: $(params.rekor-url)
       taskRef:
         kind: Task
         name: rekor-signed-provenance

@@ -51,7 +51,7 @@ spec:
             value: common-password-secret
           - name: argocd-host
             value: argocd-server-janus-argocd{{ .Values.app.cluster }}
-            - name: policy-configuration
+          - name: policy-configuration
             value: 'git::github.com/enterprise-contract/config//default'
           - name: rekor-host
             value: http://rekor-server.rekor.svc

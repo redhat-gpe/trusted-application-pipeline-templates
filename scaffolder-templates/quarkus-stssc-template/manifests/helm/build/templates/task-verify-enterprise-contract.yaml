@@ -35,6 +35,14 @@ spec:
     - name: COMPONENT_ID
       type: string
 
+    - name: POLICY_CONFIGURATION
+      type: string
+      description: |
+        Name of the policy configuration (EnterpriseContractPolicy
+        resource) to use. `namespace/name` or `name` syntax supported. If
+        namespace is omitted the namespace where the task runs is used.
+      default: "enterprise-contract-service/default"
+
     - name: IGNORE_REKOR
       type: string
       description: >-
@@ -143,6 +151,8 @@ spec:
         - "--verbose"
         - "--image"
         - "$(params.IMAGE)"
+        - "--policy"
+        - "$(params.POLICY_CONFIGURATION)"
         - "--public-key"
         - "/workspace/cosign.pub"
         - "--rekor-url"

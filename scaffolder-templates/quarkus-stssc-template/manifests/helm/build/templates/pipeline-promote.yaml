@@ -39,6 +39,8 @@ spec:
     - description: ArgoCD host
       name: argocd-host
       type: string
+    - name: policy-configuration
+      type: string
     - name: rekor-host
       type: string
   tasks:
@@ -51,6 +53,8 @@ spec:
           value: {{ .Values.app.name }}
         - name: REKOR_HOST
           value: '$(params.rekor-host)'
+        - name: POLICY_CONFIGURATION
+          value: '$(params.policy-configuration)'
       taskRef:
         kind: Task
         name: verify-enterprise-contract

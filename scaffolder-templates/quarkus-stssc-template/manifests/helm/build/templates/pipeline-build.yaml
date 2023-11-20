@@ -188,7 +188,15 @@ spec:
       taskRef:
         kind: Task
         name: resync
-
+  results:
+    - name: IMAGE_URL
+      value: "$(tasks.build-sign-image.results.IMAGE_URL)"
+    - name: IMAGE_DIGEST
+      value: "$(tasks.build-sign-image.results.IMAGE_DIGEST)"
+    - name: CHAINS-GIT_URL
+      value: "$(tasks.git-clone.results.url)"
+    - name: CHAINS-GIT_COMMIT
+      value: "$(tasks.git-clone.results.commit)"
   workspaces:
     - name: source-folder
     - name: maven-settings

@@ -1,0 +1,1092 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: sso_system
+  tags:
+    - sso
+    - shared
+    - infrastructure
+spec:
+  owner: user1
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: sso_database
+  description: "SSO Database"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/database.yaml"
+spec:
+  type: database
+  owner: user1
+  system: sso_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: sso_s3
+  description: "SSO S3 Bucket"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/s3-bucket.yaml"
+spec:
+  type: storage
+  owner: user1
+  system: sso_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: sso_redis
+  description: "sso Redis"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/redis.yaml"
+spec:
+  type: storage
+  owner: user1
+  system: sso_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: sso_kafka
+  description: "sso Kafka"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/kafka.yaml"
+spec:
+  type: storage
+  owner: user1
+  system: sso_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: sso_api
+  description: "Get SSO API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user1
+  system: sso_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: sso_backend
+  description: "SSO Backend Service"
+  tags:
+    - sso
+    - shared
+    - backend
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-backend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user1
+  system: sso_system
+  dependsOn:
+    - resource:sso_database
+    - resource:sso_s3
+    - resource:sso_redis
+    - resource:sso_kafka
+  providesApis:
+    - sso_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: sso_frontend
+  description: "SSO Frontend Service"
+  tags:
+    - sso
+    - shared
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user1
+  system: sso_system
+  consumesApis:
+    - sso_api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: customerweb_system
+  tags:
+    - web
+    - customer-facing
+    - ecommerce
+    - recommendations
+spec:
+  owner: user4
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: customerweb_database
+  description: "Customer web Database"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/database.yaml"
+spec:
+  type: database
+  owner: user4
+  system: customerweb_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: customerweb_object
+  description: "customerweb object bucket"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/s3-bucket.yaml"
+spec:
+  type: storage
+  owner: user4
+  system: customerweb_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: customerweb_redis
+  description: "customerweb Redis"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/redis.yaml"
+spec:
+  type: storage
+  owner: user4
+  system: customerweb_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: customerweb_kafka
+  description: "customerweb Kafka"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/kafka.yaml"
+spec:
+  type: storage
+  owner: user4
+  system: customerweb_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: customerweb_api
+  description: "Get customerweb API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user4
+  system: customerweb_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: preference_api
+  description: "Get preference API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user4
+  system: customerweb_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: recommendation_api
+  description: "Get recommendation API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user4
+  system: customerweb_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: customerweb_backend
+  description: "customerweb Backend Service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-backend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user4
+  system: customerweb_system
+  dependsOn:
+    - resource:customerweb_database
+    - resource:customerweb_object
+  consumesApis:
+    - sso_api
+    - preference_api
+    - recommendation_api
+  providesApis:
+    - customerweb_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: preference_backend
+  description: "preference Backend Service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-backend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user4
+  system: customerweb_system
+  dependsOn:
+    - resource:customerweb_redis
+  providesApis:
+    - preference_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: recommendation_backend
+  description: "recommendation Backend Service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-backend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user4
+  system: customerweb_system
+  dependsOn:
+    - resource:customerweb_kafka
+  providesApis:
+    - recommendation_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: customerweb_frontend
+  description: "Customer Frontend Service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user4
+  system: training_system
+  consumesApis:
+    - customerweb_api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: training_system
+  tags:
+    - training
+spec:
+  owner: user4
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: training_database
+  description: "Training Database"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/database.yaml"
+spec:
+  type: database
+  owner: user4
+  system: training_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: training_s3
+  description: "Training S3 Bucket"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/s3-bucket.yaml"
+spec:
+  type: storage
+  owner: user4
+  system: training_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: training_api
+  description: "Training API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user4
+  system: training_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: training_backend
+  description: "training Backend Service"
+  tags:
+    - training
+    - backend
+    - node
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-backend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user4
+  system: training_system
+  dependsOn:
+    - resource:training_database
+    - resource:training_s3
+  consumesApis:
+    - sso_api
+  providesApis:
+    - training_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: training_web
+  description: "Training Web App"
+  tags:
+    - training
+    - web
+    - react
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user4
+  system: training_system
+  consumesApis:
+    - training_api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: marketing_system
+  tags:
+    - marketing
+spec:
+  owner: user2
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: marketing_database
+  description: "Marketing Database"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/database.yaml"
+spec:
+  type: database
+  owner: user2
+  system: marketing_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: marketing_s3
+  description: "Marketing S3 Bucket"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/s3-bucket.yaml"
+spec:
+  type: storage
+  owner: user2
+  system: marketing_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: marketing_api
+  description: "Get Marketing API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user2
+  system: marketing_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: marketing_wordpress
+  description: "Marketing Wordpress Service"
+  tags:
+    - wordpress
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-backend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user2
+  system: marketing_system
+  dependsOn:
+    - resource:marketing_database
+    - resource:marketing_s3
+  providesApis:
+    - marketing_api
+---
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: ecommerce_system
+  tags:
+    - ecommerce
+    - consumer
+spec:
+  owner: user2
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ecommerce_database
+  description: "Ecommerce Database"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/database.yaml"
+spec:
+  type: database
+  owner: user2
+  system: ecommerce_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ecommerce_s3
+  description: "ecommerce S3 Bucket"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/s3-bucket.yaml"
+spec:
+  type: storage
+  owner: user2
+  system: ecommerce_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: ecommerce_api
+  description: "Get ecommerce API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: checkout_api
+  description: "Checkout API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: payments_api
+  description: "Payments API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: ads_api
+  description: "Ads API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: cart_api
+  description: "Cart API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: catalog_api
+  description: "Catalog API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: shipping_api
+  description: "Shipping API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: email_api
+  description: "Email API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ecommerce_checkout
+  description: "ecommerce checkout service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  providesApis:
+    - checkout_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ecommerce_payments
+  description: "ecommerce payments service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  providesApis:
+    - payments_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ecommerce_ads
+  description: "ecommerce ads service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  providesApis:
+    - ads_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ecommerce_cart
+  description: "ecommerce cart service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  providesApis:
+    - cart_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ecommerce_catalog
+  description: "ecommerce catalog service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  providesApis:
+    - catalog_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ecommerce_shipping
+  description: "ecommerce shipping service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  providesApis:
+    - shipping_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ecommerce_email
+  description: "ecommerce email service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  providesApis:
+    - email_api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ecommerce_backer
+  description: "ecommerce backer service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-backend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user4
+  system: ecommerce_system
+  dependsOn:
+    - resource:ecommerce_database
+    - resource:ecommerce_s3
+    - component:sso_backend
+    - component:customerweb_backend
+  consumesApis:
+    - sso_api
+    - checkout_api
+    - payments_api
+    - ads_api
+    - cart_api
+    - catalog_api
+    - shipping_api
+    - email_api
+    - customerweb_api
+  providesApis:
+    - ecommerce_api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ecommerce_web
+  description: "ecommerce web"
+  tags:
+    - ecommerce
+    - frontend
+  annotations:
+    backstage.io/managed-by-location: url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml
+spec:
+  type: service
+  lifecycle: production
+  owner: user2
+  system: ecommerce_system
+  consumesApis:
+    - ecommerce_api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: finance_system
+  tags:
+    - finance
+spec:
+  owner: user2
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: finance_database
+  description: "Finance database"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/database.yaml"
+spec:
+  type: database
+  owner: user2
+  system: finance_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: finance_s3
+  description: "Finance S3 Bucket"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/s3-bucket.yaml"
+spec:
+  type: storage
+  owner: user2
+  system: finance_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: finance_api
+  description: "Get finance API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user2
+  system: finance_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: finance_backend
+  description: "Finance Backend Service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-backend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user2
+  system: finance_system
+  dependsOn:
+    - resource:finance_database
+    - resource:finance_s3
+  providesApis:
+    - finance_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: finance_frontend
+  description: "Finance Frontend web"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user2
+  system: finance_system
+  consumesApis:
+    - finance_api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: accounting_system
+  tags:
+    - accounting
+    - internal
+spec:
+  owner: user3
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: accounting_database
+  description: "Accounting Data"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/database.yaml"
+spec:
+  type: database
+  owner: user3
+  system: accounting_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: accounting_s3
+  description: "accounting S3 Bucket"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/s3-bucket.yaml"
+spec:
+  type: storage
+  owner: user3
+  system: accounting_system
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: accounting_api
+  description: "Accounting API"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-grpc-api.yaml"
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user3
+  system: accounting_system
+  definition: |
+    syntax = "proto3";
+    package myorg.mygrpcapi;
+    message MyRequest {
+      string query = 1;
+    }
+    message MyResponse {
+      string result = 1;
+    }
+    service MyGrpcApi {
+      rpc MyMethod (MyRequest) returns (MyResponse);
+    }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: accounting_backend
+  description: "accounting Backend Service"
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-backend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user3
+  system: accounting_system
+  dependsOn:
+    - resource:accounting_database
+    - resource:accounting_s3
+  providesApis:
+    - accounting_api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: accounting_frontend
+  description: "Accounting Frontend web"
+  tags:
+  - web
+  annotations:
+    backstage.io/managed-by-location: "url:https://github.com/my-org/my-repo/blob/master/my-frontend.yaml"
+spec:
+  type: service
+  lifecycle: production
+  owner: user3
+  system: accounting_system
+  consumesApis:
+    - accounting_api

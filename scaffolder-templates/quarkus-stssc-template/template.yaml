@@ -173,6 +173,7 @@ spec:
           port: 8080
           repository_host: {{ '${{ parameters.repo.host }}' }}
           deployment_name: quarkus-template
+          user: {{ '${{ user.entity.metadata.name }}' }}
         targetPath: ./tenant-gitops
 
     - id: publish-gitops

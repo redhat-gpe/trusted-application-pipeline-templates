@@ -50,7 +50,7 @@ spec:
 
       git add .
 
-      git commit -m "Bump version of $ENVIRON"
+      git commit -m "Commit image tag $(params.image-tag) to $ENVIRON"
 
       git push
     image: 'alpine/git:latest'

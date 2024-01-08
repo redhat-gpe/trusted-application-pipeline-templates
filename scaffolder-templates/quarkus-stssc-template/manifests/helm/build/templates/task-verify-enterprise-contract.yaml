@@ -138,12 +138,12 @@ spec:
         cat /workspace/signing-secrets | jq -r '.data."cosign.pub"' | base64 --decode > /workspace/cosign.pub
         cat /workspace/cosign.pub
     - name: version
-      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:4376ceeeac493da74927c10c1c23a4fc5278f48a3e4ce9e4c75928c1bbba4ccd
+      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       command: [ec]
       args:
         - version
     - name: validate
-      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:4376ceeeac493da74927c10c1c23a4fc5278f48a3e4ce9e4c75928c1bbba4ccd
+      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       command: [ec]
       args:
         - validate
@@ -179,33 +179,33 @@ spec:
       - name: rekor-public-key
         mountPath: /rekor
     - name: report
-      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:4376ceeeac493da74927c10c1c23a4fc5278f48a3e4ce9e4c75928c1bbba4ccd
+      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       command: [cat]
       args:
         - "$(params.HOMEDIR)/report.yaml"
     - name: data
-      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:4376ceeeac493da74927c10c1c23a4fc5278f48a3e4ce9e4c75928c1bbba4ccd
+      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       command: [cat]
       args:
         - "$(params.HOMEDIR)/data.yaml"
     - name: attestations
-      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:4376ceeeac493da74927c10c1c23a4fc5278f48a3e4ce9e4c75928c1bbba4ccd
+      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       command: [cat]
       args:
         - "$(params.HOMEDIR)/attestations.jsonl"
     - name: report-json
-      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:4376ceeeac493da74927c10c1c23a4fc5278f48a3e4ce9e4c75928c1bbba4ccd
+      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       command: [cat]
       args:
         - "$(params.HOMEDIR)/report-json.json"
     - name: summary
-      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:4376ceeeac493da74927c10c1c23a4fc5278f48a3e4ce9e4c75928c1bbba4ccd
+      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       command: [jq]
       args:
         - "."
         - "$(results.TEST_OUTPUT.path)"
     - name: assert
-      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:4376ceeeac493da74927c10c1c23a4fc5278f48a3e4ce9e4c75928c1bbba4ccd
+      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       command: [jq]
       args:
         - "--argjson"

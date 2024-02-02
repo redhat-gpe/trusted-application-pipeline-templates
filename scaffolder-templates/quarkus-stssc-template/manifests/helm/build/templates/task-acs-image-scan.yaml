@@ -2,6 +2,12 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: acs-image-scan
+  annotations:
+    task.results.format: application/json
+    task.results.type: roxctl-image-scan
+    task.results.key: SCAN_OUTPUT
+    task.output.location: logs
+    task.results.container: step-report
 spec:
   description: Policy check an image with StackRox/RHACS This tasks allows you to
     check an image against build-time policies and apply enforcement to fail builds.
@@ -32,7 +38,7 @@ spec:
     type: string
   results:
   - description: Output of `roxctl image check`
-    name: check_output
+    name: SCAN_OUTPUT
   steps:
   - env:
     - name: ROX_API_TOKEN
@@ -54,4 +60,23 @@ spec:
       ./roxctl image scan \
         $( [ "$(params.insecure-skip-tls-verify)" = "true" ] && \
         echo -n "--insecure-skip-tls-verify") \
-        -e "$(params.rox_central_endpoint)" --image "$IMAGE" --force
+        -e "$(params.rox_central_endpoint)" --image "$IMAGE" --output json > roxctl_output.json
+      cat roxctl_output.json >  $(workspaces.reports.path)/image-scan
+  - image: 'quay.io/lrangine/crda-maven:11.0'
+    name: export-vulnerabilities
+    script: |
+        #!/bin/sh
+        jq -rce \
+        "{vulnerabilities:{
+        critical: (.result.summary.CRITICAL),
+        high: (.result.summary.IMPORTANT),
+        medium: (.result.summary.MODERATE),
+        low: (.result.summary.LOW)
+        }}" $(workspaces.reports.path)/image-scan | tee $(results.SCAN_OUTPUT.path)
+  - image: 'quay.io/lrangine/crda-maven:11.0'
+    name: report
+    script: |
+        #!/bin/sh
+        cat $(workspaces.reports.path)/image-scan
+  workspaces:
+    - name: reports

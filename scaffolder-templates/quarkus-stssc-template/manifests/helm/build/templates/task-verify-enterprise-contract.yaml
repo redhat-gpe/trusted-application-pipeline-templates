@@ -23,6 +23,10 @@ metadata:
     tekton.dev/displayName: Verify Enterprise Contract
     tekton.dev/pipelines.minVersion: "0.19"
     tekton.dev/tags: ec, chains, signature, conftest
+    task.results.format: application/json
+    task.results.type: ec
+    task.output.location: logs
+    task.results.container: step-report-json
   labels:
     app.kubernetes.io/version: "0.1"
 

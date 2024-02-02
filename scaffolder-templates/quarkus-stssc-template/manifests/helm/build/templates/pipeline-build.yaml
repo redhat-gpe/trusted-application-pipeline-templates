@@ -111,6 +111,9 @@ spec:
       taskRef:
         kind: Task
         name: acs-image-check
+      workspaces:
+      - name: reports
+        workspace: reports
     - name: acs-image-scan
       params:
       - name: rox_central_endpoint
@@ -128,6 +131,9 @@ spec:
       taskRef:
         kind: Task
         name: acs-image-scan
+      workspaces:
+      - name: reports
+        workspace: reports
     - name: acs-deploy-check
       params:
       - name: rox_central_endpoint
@@ -149,6 +155,9 @@ spec:
         name: acs-deploy-check
       runAfter:
       - build-sign-image
+      workspaces:
+      - name: reports
+        workspace: reports
     - name: scan-export-sbom
       params:
       - name: cyclonedxHostUrl
@@ -197,7 +206,10 @@ spec:
       value: "$(tasks.git-clone.results.url)"
     - name: CHAINS-GIT_COMMIT
       value: "$(tasks.git-clone.results.commit)"
+    - name: ACS_SCAN_OUTPUT
+      value: "$(tasks.acs-image-scan.results.SCAN_OUTPUT)"
   workspaces:
     - name: source-folder
     - name: maven-settings
     - name: docker-config
+    - name: reports

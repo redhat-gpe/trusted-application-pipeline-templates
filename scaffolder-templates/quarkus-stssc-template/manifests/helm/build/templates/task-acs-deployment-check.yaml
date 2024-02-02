@@ -2,6 +2,11 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: acs-deploy-check
+  annotations:
+    task.results.format: application/json
+    task.results.type: roxctl-deployment-check
+    task.output.location: logs
+    task.results.container: step-report
 spec:
   description: >-
     Policy check a deployment with StackRox/RHACS This tasks allows you to check
@@ -117,11 +122,19 @@ spec:
         ./roxctl deployment check \
          $( [ "$(params.insecure-skip-tls-verify)" = "true" ] && \
          echo -n "--insecure-skip-tls-verify") \
-         -e "$(params.rox_central_endpoint)" --file "deployment.yaml"
+         -e "$(params.rox_central_endpoint)" --file "deployment.yaml" --output json > roxctl_deployment_check.json
+        cat roxctl_deployment_check.json >  $(workspaces.reports.path)/deployment-check
       volumeMounts:
         - mountPath: /workspace/repository
           name: repository
       workingDir: /workspace/repository
+    - image: 'quay.io/lrangine/crda-maven:11.0'
+      name: report
+      script: |
+          #!/bin/sh
+          cat $(workspaces.reports.path)/deployment-check
+  workspaces:
+    - name: reports
   volumes:
     - emptyDir: {}
       name: repository

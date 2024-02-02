@@ -2,6 +2,11 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: acs-image-check
+  annotations:
+    task.results.format: application/json
+    task.results.type: roxctl-image-check
+    task.output.location: logs
+    task.results.container: step-report
 spec:
   description: Policy check an image with StackRox/RHACS This tasks allows you to
     check an image against build-time policies and apply enforcement to fail builds.
@@ -54,4 +59,12 @@ spec:
       ./roxctl image check \
         $( [ "$(params.insecure-skip-tls-verify)" = "true" ] && \
         echo -n "--insecure-skip-tls-verify") \
-        -e "$(params.rox_central_endpoint)" --image "$IMAGE" --force
+        -e "$(params.rox_central_endpoint)" --image "$IMAGE" --output json > roxctl_image_check.json
+      cat roxctl_image_check.json >  $(workspaces.reports.path)/image-check
+  - image: 'quay.io/lrangine/crda-maven:11.0'
+    name: report
+    script: |
+        #!/bin/sh
+        cat $(workspaces.reports.path)/image-check
+  workspaces:
+    - name: reports

@@ -55,6 +55,8 @@ spec:
         serviceAccountName: pipeline
         timeout: 1h0m0s
         workspaces:
+          - name: reports
+            emptyDir: {}
           - name: source-folder
             volumeClaimTemplate:
               spec:

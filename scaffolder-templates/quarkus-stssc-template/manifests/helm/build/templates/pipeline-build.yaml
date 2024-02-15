@@ -42,6 +42,12 @@ spec:
       type: string
     - name: rekor-url
       type: string
+    - name: tuf-mirror
+      type: string
+    - name: certificate-identity
+      type: string
+    - name: oidc-issuer
+      type: string
   tasks:
     - name: git-clone
       params:
@@ -55,9 +61,27 @@ spec:
       workspaces:
         - name: output
           workspace: source-folder
-    - name: package
+    - name: verify-commit
+      params:
+      - name: certificate-identity
+        value: $(params.certificate-identity)
+      - name: oidc-issuer
+        value: $(params.oidc-issuer)
+      - name: rekor-url
+        value: $(params.rekor-url)
+      - name: tuf-mirror
+        value: $(params.tuf-mirror)
       runAfter:
         - git-clone
+      taskRef:
+        kind: Task
+        name: verify-commit
+      workspaces:
+        - name: repository
+          workspace: source-folder
+    - name: package
+      runAfter:
+        - verify-commit
       taskRef:
         kind: ClusterTask
         name: maven

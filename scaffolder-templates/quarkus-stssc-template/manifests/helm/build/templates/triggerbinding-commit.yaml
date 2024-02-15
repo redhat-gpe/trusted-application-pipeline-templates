@@ -8,3 +8,5 @@ spec:
       value: $(body.repository.git_http_url)
     - name: git-revision
       value: $(body.after)
+    - name: git-committer
+      value: $(body.user_email)

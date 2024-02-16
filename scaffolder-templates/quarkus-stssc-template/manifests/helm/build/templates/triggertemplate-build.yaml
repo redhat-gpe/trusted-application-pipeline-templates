@@ -13,6 +13,8 @@ spec:
     - name: output-image
       description: reference of the image that will get created
       default: {{ include "image.dev-url" . }}
+    - name: git-committer
+      description: Email of user who committed the change
   resourcetemplates:
     - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun

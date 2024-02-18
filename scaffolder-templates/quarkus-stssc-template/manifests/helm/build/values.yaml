@@ -11,7 +11,7 @@ git:
   host: ${{ values.repository_host }}
   token: ''
   webhookSecret: ''
-  verify_commit: ${{ values.verify_commit }}
+  verify_commits: ${{ values.verify_commits }}
 
 
 image:

@@ -61,7 +61,7 @@ spec:
       workspaces:
         - name: output
           workspace: source-folder
-{{- if eq .Values.git.verify_commit "enabled" }}
+{{- if eq .Values.git.verify_commits "enabled" }}
     - name: verify-commit
       params:
       - name: certificate-identity

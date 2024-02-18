@@ -61,6 +61,7 @@ spec:
       workspaces:
         - name: output
           workspace: source-folder
+{{- if eq .Values.git.verify_commit "enabled" }}
     - name: verify-commit
       params:
       - name: certificate-identity
@@ -82,6 +83,11 @@ spec:
     - name: package
       runAfter:
         - verify-commit
+{{- else }}
+    - name: package
+      runAfter:
+        - git-clone
+{{- end }}
       taskRef:
         kind: ClusterTask
         name: maven

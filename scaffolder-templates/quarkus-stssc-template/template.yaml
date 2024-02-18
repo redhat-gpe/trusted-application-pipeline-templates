@@ -116,7 +116,7 @@ spec:
             verify_commit:
               title: Verify Commits
               type: string
-              description: Enable this option to verify your source code commits
+              description: Verify Git repository commits using Red Hat’s Trusted Artifact Signer (TAS) service
               default: disabled
               enum:
                 - enabled

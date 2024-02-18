@@ -113,6 +113,14 @@ spec:
               default: {{ gitlab_destination_group }}
               enum:
                 - {{ gitlab_destination_group }}
+            verify_commit:
+              title: Verify Commits
+              type: string
+              description: Enable this option to verify your source code commits
+              default: disabled
+              enum:
+                - enabled
+                - disabled
 
   steps:
     - id: template
@@ -174,6 +182,7 @@ spec:
           repository_host: {{ '${{ parameters.repo.host }}' }}
           deployment_name: quarkus-template
           user: {{ '${{ user.entity.metadata.name }}' }}
+          verify_commit: {{ '${{ parameters.repo.verify_commit }}' }}
         targetPath: ./tenant-gitops
 
     - id: publish-gitops

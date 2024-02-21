@@ -134,12 +134,12 @@ spec:
         cat /workspace/signing-secrets | jq -r '.data."cosign.pub"' | base64 --decode > /workspace/cosign.pub
         cat /workspace/cosign.pub
     - name: version
-      image: quay.io/enterprise-contract/ec-cli:snapshot
+      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       command: [ec]
       args:
         - version
     - name: initialize-tuf
-      image: quay.io/enterprise-contract/ec-cli:snapshot
+      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       script: |-
         set -euo pipefail
 

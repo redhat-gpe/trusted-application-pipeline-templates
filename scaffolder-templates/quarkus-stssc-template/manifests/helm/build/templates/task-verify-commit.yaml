@@ -33,7 +33,9 @@ spec:
       rm -f gitsign_0.7.1_linux_amd64.rpm
       wget -q https://github.com/sigstore/gitsign/releases/download/v0.7.1/gitsign_0.7.1_linux_amd64.rpm
       rpm -ivh gitsign_0.7.1_linux_amd64.rpm
+      git config --global --add safe.directory /workspace/repository
       cosign initialize --mirror=$(params.tuf-mirror) --root=$(params.tuf-mirror)/root.json
+      git show -s
       gitsign verify --certificate-identity=$(params.certificate-identity) --certificate-oidc-issuer=$(params.oidc-issuer) HEAD || (echo "Unable to verify commit signature!" && exit 1)
     workingDir: /workspace/repository
   workspaces:

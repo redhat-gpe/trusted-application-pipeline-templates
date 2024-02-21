@@ -154,11 +154,6 @@ spec:
       env:
         - name: TUF_MIRROR
           value: "$(params.TUF_MIRROR)"
-    - name: version
-      image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
-      command: [ec]
-      args:
-        - version
     - name: validate
       image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       command: [ec]

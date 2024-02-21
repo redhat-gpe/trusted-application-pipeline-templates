@@ -55,6 +55,8 @@ spec:
             value: 'git::github.com/enterprise-contract/config//default'
           - name: rekor-host
             value: http://rekor-server.rekor-system.svc
+          - name: tuf_mirror
+            value: http://tuf-server.tuf-system.svc
         pipelineRef:
           name: {{ .Values.app.name }}-promote
         serviceAccountName: image-pusher

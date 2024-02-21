@@ -110,19 +110,11 @@ spec:
         items:
         - key: .dockerconfigjson
           path: config.json
-    - name: rekor-public-key
-      secret:
-        secretName: rekor-public-key
-        items:
-        - key: public.key
-          path: public.key
 
   stepTemplate:
     env:
       - name: HOME
         value: "$(params.HOMEDIR)"
-      - name: SIGSTORE_REKOR_PUBLIC_KEY
-        value: /rekor/public.key
 
   steps:
     - args:
@@ -180,8 +172,6 @@ spec:
       volumeMounts:
       - name: docker-config
         mountPath: $(params.HOMEDIR)/.docker
-      - name: rekor-public-key
-        mountPath: /rekor
     - name: report
       image: quay.io/enterprise-contract/ec-cli:snapshot@sha256:33be4031a3316a46db3559a4d8566bc22f9d4d491d262d699614f32f35b45b67
       command: [cat]

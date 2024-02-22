@@ -36,7 +36,8 @@ spec:
       git config --global --add safe.directory /workspace/repository
       cosign initialize --mirror=$(params.tuf-mirror) --root=$(params.tuf-mirror)/root.json
       git show -s
-      gitsign verify --certificate-identity=$(params.certificate-identity) --certificate-oidc-issuer=$(params.oidc-issuer) HEAD || (echo "Unable to verify commit signature!" && exit 1)
+      gitsign verify --certificate-identity=$(params.certificate-identity) --certificate-oidc-issuer=$(params.oidc-issuer) HEAD \
+      || (echo "Unable to verify commit signature!  Please ensure that the RHEL9 VM was used for source code commits or have configured GitSign on your development machine correctly." && exit 1)
     workingDir: /workspace/repository
   workspaces:
   - name: repository

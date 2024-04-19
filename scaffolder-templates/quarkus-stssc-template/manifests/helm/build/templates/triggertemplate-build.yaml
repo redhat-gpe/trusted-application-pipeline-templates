@@ -51,9 +51,9 @@ spec:
           - name: common-password-secret
             value: common-password-secret
           - name: rekor-url
-            value: http://rekor-server.rekor-system.svc
+            value: http://rekor-server.trusted-artifact-signer.svc
           - name: tuf-mirror
-            value: http://tuf-server.tuf-system.svc
+            value: http://tuf.trusted-artifact-signer.svc
           - name: certificate-identity
             value: $(tt.params.git-committer)
           - name: oidc-issuer

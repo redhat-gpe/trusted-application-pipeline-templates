@@ -7,7 +7,7 @@ spec:
   - description: TUF mirror
     name: tuf-mirror
     type: string
-    default: http://tuf-server.tuf-system.svc
+    default: http://tuf.trusted-artifact-signer.svc
   - description: Email address of committer
     name: certificate-identity
     type: string
@@ -19,7 +19,7 @@ spec:
   - description: Rekor URL
     name: rekor-url
     type: string
-    default: http://rekor-server.rekor-system.svc
+    default: http://rekor-server.trusted-artifact-signer.svc
   description: This task verifies the latest commit signature
   stepTemplate:
     env:

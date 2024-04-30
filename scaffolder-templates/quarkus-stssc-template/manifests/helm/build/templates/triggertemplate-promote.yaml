@@ -52,7 +52,7 @@ spec:
           - name: argocd-host
             value: argocd-server-janus-argocd{{ .Values.app.cluster }}
           - name: policy-configuration
-            value: 'git::github.com/enterprise-contract/config//default'
+            value: 'git::github.com/redhat-gpe/config//default'
           - name: rekor-host
             value: http://rekor-server.trusted-artifact-signer.svc
           - name: tuf_mirror

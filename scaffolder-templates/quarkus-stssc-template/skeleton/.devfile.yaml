@@ -15,6 +15,10 @@ components:
       volumeMounts:
         - name: m2
           path: /home/user/.m2
+{%- if values.verify_commits == 'enabled' %}
+        - name: home
+          path: /projects/home
+{%- endif %}
       endpoints:
         - name: quarkus-dev
           targetPort: 8080
@@ -35,6 +39,56 @@ components:
   - name: m2
     volume:
       size: 1G
+{%- if values.verify_commits == 'enabled' %}
+  - name: home
+    volume:
+      size: 4Gi
+  - name: rhtas-clis
+    container:
+      args:
+        - '-c'
+        - >-
+          mkdir -p /projects/home/bin && cp -vf /opt/app-root/src/clients/linux/cosign-amd64.gz /projects/home/bin/cosign.gz && cp -vf /opt/app-root/src/clients/linux/gitsign-amd64.gz /projects/home/bin/gitsign.gz
+      command:
+        - /bin/bash
+      image: registry.redhat.io/rhtas/client-server-cg-rhel9:1.0.0
+      sourceMapping: /projects
+      mountSources: true
+      memoryLimit: 256M
+      volumeMounts:
+      - name: home
+        path: /projects/home
+  - name: rhtas-clis-server
+    container:
+      args:
+        - '-c'
+        - >-
+          mkdir -p /projects/home/bin && cp -vf /opt/app-root/src/clients/linux/rekor-cli-amd64.gz /projects/home/bin/rekor-cli.gz
+      command:
+        - /bin/bash
+      image: registry.redhat.io/rhtas/client-server-re-rhel9:1.0.0
+      sourceMapping: /projects
+      mountSources: true
+      memoryLimit: 256M
+      volumeMounts:
+      - name: home
+        path: /projects/home
+  - name: rhtas-clis-unzip
+    container:
+      args:
+        - '-c'
+        - >-
+          mkdir -p /projects/home/bin && ls -l /projects/home/bin && gunzip -c /projects/home/bin/cosign.gz > /projects/home/bin/cosign && chmod +x /projects/home/bin/cosign && rm -f /projects/home/bin/cosign.gz && gunzip -c /projects/home/bin/gitsign.gz > /projects/home/bin/gitsign && chmod +x /projects/home/bin/gitsign && rm -f /projects/home/bin/gitsign.gz && gunzip -c /projects/home/bin/rekor-cli.gz > /projects/home/bin/rekor-cli && chmod +x /projects/home/bin/rekor-cli && rm -f /projects/home/bin/rekor-cli.gz
+      command:
+        - /bin/bash
+      image: registry.access.redhat.com/ubi9/toolbox@sha256:47d4891b3e744f5622a31bd21a42dd51358c43bbfd44860cc05c7b29cc520e66
+      sourceMapping: /projects
+      mountSources: true
+      memoryLimit: 256M
+      volumeMounts:
+      - name: home
+        path: /projects/home
+{%- endif %}
 commands:
   - id: package
     exec:
@@ -52,3 +106,43 @@ commands:
       group:
         kind: run
         isDefault: true
+{%- if values.verify_commits == 'enabled' %}
+  - apply:
+      component: rhtas-clis
+      label: Copy RHTAS CLIs
+    id: cp-rhtas-clis
+  - apply:
+      component: rhtas-clis-server
+      label: Copy RHTAS Server CLIs
+    id: cp-rhtas-clis-server
+  - apply:
+      component: rhtas-clis-unzip
+      label: Unzip RHTAS CLIs
+    id: cp-rhtas-clis-unzip
+  - id: init-gitsign
+    exec:
+      label: "Initialize gitsign"
+      component: development-tooling
+      workingDir: /home/user
+      commandLine: |
+        git config --global user.email '${{values.owner}}@opentlc.com'
+        git config --global user.name '${{values.owner}}'
+        git config --global commit.gpgsign true
+        git config --global tag.gpgsign true
+        git config --global gpg.x509.program /projects/home/bin/gitsign
+        git config --global gpg.format x509
+        git config --global gitsign.fulcio https://fulcio-server-trusted-artifact-signer${{values.cluster}}
+        git config --global gitsign.issuer https://keycloak-keycloak-system${{values.cluster}}/auth/realms/trusted-artifact-signer
+        git config --global gitsign.rekor https://rekor-server-trusted-artifact-signer${{values.cluster}}
+        git config --global gitsign.clientid trusted-artifact-signer
+      group:
+        kind: build
+        isDefault: true
+events:
+  preStart:
+    - cp-rhtas-clis
+    - cp-rhtas-clis-server
+    - cp-rhtas-clis-unzip
+  postStart:
+    - init-gitsign
+{%- endif %}

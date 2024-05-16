@@ -24,7 +24,7 @@ spec:
           description: Unique name of the component
           default: my-quarkus-app
           ui:field: EntityNamePicker
-          maxLength: 28
+          maxLength: 14
         group_id:
           title: Group Id
           type: string

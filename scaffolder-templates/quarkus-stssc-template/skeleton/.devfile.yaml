@@ -144,15 +144,15 @@ commands:
       component: development-tooling
       workingDir: /home/user
       commandLine: |
-        git config --global user.email 'user4@opentlc.com'
-        git config --global user.name 'user4'
+        git config --global user.email '${{values.owner}}@opentlc.com'
+        git config --global user.name '${{values.owner}}'
         git config --global commit.gpgsign true
         git config --global tag.gpgsign true
         git config --global gpg.x509.program /projects/home/bin/gitsign
         git config --global gpg.format x509
-        git config --global gitsign.fulcio https://fulcio-server-trusted-artifact-signer.apps.cluster-vxq94.sandbox1999.opentlc.com
-        git config --global gitsign.issuer https://keycloak-keycloak-system.apps.cluster-vxq94.sandbox1999.opentlc.com/auth/realms/trusted-artifact-signer
-        git config --global gitsign.rekor https://rekor-server-trusted-artifact-signer.apps.cluster-vxq94.sandbox1999.opentlc.com
+        git config --global gitsign.fulcio https://fulcio-server-trusted-artifact-signer${{values.cluster}}
+        git config --global gitsign.issuer https://keycloak-keycloak-system${{values.cluster}}/auth/realms/trusted-artifact-signer
+        git config --global gitsign.rekor https://rekor-server-trusted-artifact-signer${{values.cluster}}
         git config --global gitsign.clientid trusted-artifact-signer
       group:
         kind: build

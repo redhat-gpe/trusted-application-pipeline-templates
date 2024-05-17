@@ -43,30 +43,45 @@ components:
   - name: home
     volume:
       size: 4Gi
-  - name: rhtas-clis
+  - name: rhtas-cosign
     container:
       args:
         - '-c'
         - >-
-          mkdir -p /projects/home/bin && cp -vf /opt/app-root/src/clients/linux/cosign-amd64.gz /projects/home/bin/cosign.gz && cp -vf /opt/app-root/src/clients/linux/gitsign-amd64.gz /projects/home/bin/gitsign.gz
+          mkdir -p /projects/home/bin && cp -vf /usr/local/bin/cosign-linux-amd64.gz /projects/home/bin/cosign.gz
       command:
         - /bin/bash
-      image: registry.redhat.io/rhtas/client-server-cg-rhel9:1.0.0
+      image: registry.redhat.io/rhtas/cosign-rhel9:1.0.0
       sourceMapping: /projects
       mountSources: true
       memoryLimit: 256M
       volumeMounts:
       - name: home
         path: /projects/home
-  - name: rhtas-clis-server
+  - name: rhtas-gitsign
     container:
       args:
         - '-c'
         - >-
-          mkdir -p /projects/home/bin && cp -vf /opt/app-root/src/clients/linux/rekor-cli-amd64.gz /projects/home/bin/rekor-cli.gz
+          mkdir -p /projects/home/bin && cp -vf /usr/local/bin/gitsign_cli_linux_amd64.gz /projects/home/bin/gitsign.gz
       command:
         - /bin/bash
-      image: registry.redhat.io/rhtas/client-server-re-rhel9:1.0.0
+      image: registry.redhat.io/rhtas/gitsign-rhel9:1.0.0
+      sourceMapping: /projects
+      mountSources: true
+      memoryLimit: 256M
+      volumeMounts:
+      - name: home
+        path: /projects/home
+  - name: rhtas-rekor
+    container:
+      args:
+        - '-c'
+        - >-
+          mkdir -p /projects/home/bin && cp -vf /usr/local/bin/rekor_cli_linux_amd64.gz /projects/home/bin/rekor-cli.gz
+      command:
+        - /bin/bash
+      image: registry.redhat.io/rhtas/rekor-cli-rhel9:1.0.0
       sourceMapping: /projects
       mountSources: true
       memoryLimit: 256M
@@ -108,13 +123,17 @@ commands:
         isDefault: true
 {%- if values.verify_commits == 'enabled' %}
   - apply:
-      component: rhtas-clis
-      label: Copy RHTAS CLIs
-    id: cp-rhtas-clis
+      component: rhtas-cosign
+      label: Copy Cosign CLI
+    id: cp-cosign-clis
   - apply:
-      component: rhtas-clis-server
-      label: Copy RHTAS Server CLIs
-    id: cp-rhtas-clis-server
+      component: rhtas-gitsign
+      label: Copy Gitsign CLI
+    id: cp-gitsign-clis
+  - apply:
+      component: rhtas-rekor
+      label: Copy Rekor CLI
+    id: cp-rekor-clis
   - apply:
       component: rhtas-clis-unzip
       label: Unzip RHTAS CLIs
@@ -140,8 +159,9 @@ commands:
         isDefault: true
 events:
   preStart:
-    - cp-rhtas-clis
-    - cp-rhtas-clis-server
+    - cp-cosign-clis
+    - cp-gitsign-clis
+    - cp-rekor-clis
     - cp-rhtas-clis-unzip
   postStart:
     - init-gitsign

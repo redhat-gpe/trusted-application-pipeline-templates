@@ -188,6 +188,20 @@ spec:
       workspaces:
       - name: reports
         workspace: reports
+    - name: upload-sbom-to-trustification
+      runAfter:
+      - acs-image-check
+      - acs-image-scan
+      - acs-deploy-check
+      taskRef:
+        kind: Task
+        name: upload-sbom-to-trustification
+      params:
+      - name: COMPONENT_ID
+        value: $(params.component-id)
+      workspaces:
+      - name: sboms
+        workspace: source-folder
     - name: scan-export-sbom
       params:
       - name: cyclonedxHostUrl
@@ -222,6 +236,7 @@ spec:
       - name: COMPONENT_ID
         value: $(params.component-id)
       runAfter:
+      - upload-sbom-to-trustification
       - scan-export-sbom
       - query-rekor-signed-provenance
       taskRef:

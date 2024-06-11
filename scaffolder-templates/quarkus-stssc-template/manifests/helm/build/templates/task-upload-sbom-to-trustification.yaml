@@ -247,5 +247,5 @@ spec:
           -H "transfer-encoding: chunked" \
           -H "content-type: application/json" \
           --data "@$supported_version_of_sbom" \
-          "$bombastic_api_url/api/v1/sbom?id=$(params.COMPONENT_ID)"
+          "$bombastic_api_url/api/v1/sbom?id=$sbom_id"
       done

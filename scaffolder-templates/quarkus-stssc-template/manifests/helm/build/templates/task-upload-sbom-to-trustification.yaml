@@ -117,6 +117,15 @@ spec:
         fi
 
         echo "Found CycloneDX SBOM: $file_relpath"
+        
+        # Your SBOM ultimately appears in the TPA UI with a name listed in this .json file. By
+        # default, Syft creates that name based on the filepath of the SBOM. If you want your SBOM to
+        # appear in the TPA UI with a more meaningful name, you must manually change it in the .json file
+        # you just downloaded. Specifically, you must replace the name in the .metadata.component
+        # object. You can optionally add a version field here, if you wish.
+        # This is why we've added the sed command to give the sbom a meaningful name
+        sed -i 's|"/var/lib/containers/storage/vfs/dir/[^"]*|"$(params.COMPONENT_ID)|' $filepath
+        
         # The 'id' of each SBOM is checksum of the original content, before (possibly)
         # downgrading the CycloneDX version. The conversion always updates some metadata
         # (timestamp, UUID), changing the checksum. To avoid duplication, use the original

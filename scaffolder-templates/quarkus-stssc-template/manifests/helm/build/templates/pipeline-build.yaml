@@ -124,6 +124,32 @@ spec:
       workspaces:
       - name: source
         workspace: source-folder
+    - name: upload-sbom-to-trustification
+      runAfter:
+      - build-sign-image
+      taskRef:
+        kind: Task
+        name: upload-sbom-to-trustification
+      params:
+      - name: COMPONENT_ID
+        value: $(params.component-id)
+      workspaces:
+      - name: sboms
+        workspace: source-folder
+    - name: upload-sbom-to-cyclonedx-repo
+      params:
+      - name: cyclonedxHostUrl
+        value: $(params.cyclonedx-host-url)
+      - name: image
+        value: {{ include "sha-image.dev-url" . }}@$(tasks.build-sign-image.results.IMAGE_DIGEST)
+      runAfter:
+      - build-sign-image
+      taskRef:
+        kind: Task
+        name: upload-sbom-to-cyclonedx-repo
+      workspaces:
+      - name: repository
+        workspace: source-folder
     - name: acs-image-check
       params:
       - name: rox_central_endpoint
@@ -137,7 +163,8 @@ spec:
       - name: image_digest
         value: $(tasks.build-sign-image.results.IMAGE_DIGEST)
       runAfter:
-      - build-sign-image
+      - upload-sbom-to-trustification
+      - upload-sbom-to-cyclonedx-repo
       taskRef:
         kind: Task
         name: acs-image-check
@@ -157,7 +184,8 @@ spec:
       - name: image_digest
         value: $(tasks.build-sign-image.results.IMAGE_DIGEST)
       runAfter:
-      - build-sign-image
+      - upload-sbom-to-trustification
+      - upload-sbom-to-cyclonedx-repo
       taskRef:
         kind: Task
         name: acs-image-scan
@@ -184,40 +212,11 @@ spec:
         kind: Task
         name: acs-deploy-check
       runAfter:
-      - build-sign-image
+      - upload-sbom-to-trustification
+      - upload-sbom-to-cyclonedx-repo
       workspaces:
       - name: reports
         workspace: reports
-    - name: upload-sbom-to-trustification
-      runAfter:
-      - acs-image-check
-      - acs-image-scan
-      - acs-deploy-check
-      taskRef:
-        kind: Task
-        name: upload-sbom-to-trustification
-      params:
-      - name: COMPONENT_ID
-        value: $(params.component-id)
-      workspaces:
-      - name: sboms
-        workspace: source-folder
-    - name: scan-export-sbom
-      params:
-      - name: cyclonedxHostUrl
-        value: $(params.cyclonedx-host-url)
-      - name: image
-        value: {{ include "sha-image.dev-url" . }}@$(tasks.build-sign-image.results.IMAGE_DIGEST)
-      runAfter:
-      - acs-image-check
-      - acs-image-scan
-      - acs-deploy-check
-      taskRef:
-        kind: Task
-        name: scan-export-sbom
-      workspaces:
-      - name: repository
-        workspace: source-folder
     - name: query-rekor-signed-provenance
       params:
       - name: imageDigest
@@ -236,8 +235,6 @@ spec:
       - name: COMPONENT_ID
         value: $(params.component-id)
       runAfter:
-      - upload-sbom-to-trustification
-      - scan-export-sbom
       - query-rekor-signed-provenance
       taskRef:
         kind: Task

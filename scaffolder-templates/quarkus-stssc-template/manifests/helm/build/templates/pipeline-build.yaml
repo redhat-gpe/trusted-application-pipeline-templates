@@ -124,12 +124,12 @@ spec:
       workspaces:
       - name: source
         workspace: source-folder
-    - name: upload-sbom-to-trustification
+    - name: upload-sbom-to-tpa
       runAfter:
       - build-sign-image
       taskRef:
         kind: Task
-        name: upload-sbom-to-trustification
+        name: upload-sbom-to-tpa
       params:
       - name: COMPONENT_ID
         value: $(params.component-id)
@@ -163,7 +163,7 @@ spec:
       - name: image_digest
         value: $(tasks.build-sign-image.results.IMAGE_DIGEST)
       runAfter:
-      - upload-sbom-to-trustification
+      - upload-sbom-to-tpa
       - upload-sbom-to-cyclonedx-repo
       taskRef:
         kind: Task
@@ -184,7 +184,7 @@ spec:
       - name: image_digest
         value: $(tasks.build-sign-image.results.IMAGE_DIGEST)
       runAfter:
-      - upload-sbom-to-trustification
+      - upload-sbom-to-tpa
       - upload-sbom-to-cyclonedx-repo
       taskRef:
         kind: Task
@@ -212,7 +212,7 @@ spec:
         kind: Task
         name: acs-deploy-check
       runAfter:
-      - upload-sbom-to-trustification
+      - upload-sbom-to-tpa
       - upload-sbom-to-cyclonedx-repo
       workspaces:
       - name: reports

@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: scan-export-sbom
+  name: upload-sbom-to-cyclonedx-repo
   annotations:
     task.results.format: application/text
     task.results.type: external-link
@@ -44,16 +44,6 @@ spec:
 
         printf "%s" "$LOCATION" > "$(results.LINK_TO_SBOM.path)"
 
-      workingDir: /workspace/repository
-    - image: 'quay.io/redhat-gpte/grype:0.65.2'
-      name: scan-sbom
-      resources:
-        requests:
-          memory: 1Gi
-      script: >
-        set -x
-
-        grype sbom:./bom.json -o table
       workingDir: /workspace/repository
   workspaces:
   - name: repository

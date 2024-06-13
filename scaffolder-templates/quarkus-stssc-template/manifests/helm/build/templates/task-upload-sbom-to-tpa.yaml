@@ -3,7 +3,7 @@ kind: Task
 metadata:
   annotations:
     tekton.dev/tags: "sbom, trustification"
-  name: upload-sbom-to-trustification
+  name: upload-sbom-to-tpa
 spec:
   description: |-
     Upload an SBOM file to [Trustification] using the [BOMbastic] API.

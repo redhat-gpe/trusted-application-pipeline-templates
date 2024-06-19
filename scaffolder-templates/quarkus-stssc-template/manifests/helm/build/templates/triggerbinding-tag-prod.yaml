@@ -4,6 +4,10 @@ metadata:
   name: tag-binding-prod
 spec:
   params:
+    - name: git-repo-url
+      value: $(body.repository.git_http_url)
+    - name: git-revision
+      value: $(body.after)
     - name: source-tag
       value: $(body.tag)
 {{- if ne .Values.image.registry "Quay" }}

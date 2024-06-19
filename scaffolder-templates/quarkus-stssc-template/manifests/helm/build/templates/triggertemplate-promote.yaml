@@ -5,6 +5,10 @@ metadata:
   name: {{ .Values.app.name }}-run-promote
 spec:
   params:
+    - name: git-repo-url
+      description: Repository where the event was triggered
+    - name: git-revision
+      description: Revision of the change
     - name: source-image
       description: The source image to promote
       default: {{ include "image.dev-url" . }}
@@ -31,6 +35,10 @@ spec:
           taskServiceAccountName: job-runner
 {{- end }}
         params:
+          - name: git-repo-url
+            value: $(tt.params.git-repo-url)
+          - name: git-revision
+            value: $(tt.params.git-revision)
           - name: source-image
             value: $(tt.params.source-image)
           - name: destination-image

@@ -8,6 +8,10 @@ metadata:
     backstage.io/kubernetes-id: {{ .Values.app.name }}
 spec:
   params:
+    - name: git-repo-url
+      description: The git repository used in promotion
+    - name: git-revision
+      description: The revision to be promoted
     - name: source-image
       description: source image to promote
       type: string
@@ -59,6 +63,10 @@ spec:
           value: '$(params.policy-configuration)'
         - name: TUF_MIRROR
           value: '$(params.tuf_mirror)'
+        - name: CI_PROJECT_URL
+          value: '$(params.git-repo-url)'
+        - name: GIT_REVISION
+          value: '$(params.git-revision)'
       taskRef:
         kind: Task
         name: verify-enterprise-contract

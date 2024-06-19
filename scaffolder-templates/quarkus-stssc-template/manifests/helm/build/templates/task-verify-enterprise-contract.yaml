@@ -94,6 +94,12 @@ spec:
       description: Rekor host for transparency log lookups
       default: https://rekor.sigstore.dev
 
+    - name: CI_PROJECT_URL
+      type: string
+
+    - name: GIT_REVISION
+      type: string
+
   workspaces:
     - name: data
       description: The workspace where the snapshot spec json file resides
@@ -117,6 +123,19 @@ spec:
         value: "$(params.HOMEDIR)"
 
   steps:
+    - script: |
+        cat <<EOF | tee /workspace/images.yaml
+        ---
+        components:
+          - containerImage: "$(params.IMAGE)"
+            source:
+              git:
+                url: "$(params.CI_PROJECT_URL)"
+                revision: "$(params.GIT_REVISION)"
+        EOF
+      image: 'ubi8/ubi-minimal'
+      name: create-images-yaml
+      resources: {}
     - args:
         - >-
           oc get secret signing-secrets -n openshift-pipelines -o json > /workspace/signing-secrets
@@ -161,8 +180,8 @@ spec:
         - validate
         - image
         - "--verbose"
-        - "--image"
-        - "$(params.IMAGE)"
+        - "--images"
+        - "/workspace/images.yaml"
         - "--policy"
         - "$(params.POLICY_CONFIGURATION)"
         - "--public-key"

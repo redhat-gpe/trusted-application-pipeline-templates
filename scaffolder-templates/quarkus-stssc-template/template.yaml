@@ -3,7 +3,7 @@ kind: Template
 metadata:
   name: quarkus-stssc-template
   title: Securing a Quarkus Service Software Supply Chain
-  description: Create a simple microservice built on a trusted software supply chain
+  description: Create a Quarkus Service built with Red Hat Trusted Application Pipeline
   tags:
     - recommended
     - java

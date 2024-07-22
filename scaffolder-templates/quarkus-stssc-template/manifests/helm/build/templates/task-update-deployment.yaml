@@ -46,7 +46,7 @@ spec:
 
       FILE=$(params.component-id)-argocd-app-$ENVIRON.yaml
 
-      sed -i "22s/.*/        value: $(params.image-tag)/" argocd/$FILE
+      sed -i "22s/.*/        value: '$(params.image-tag)'/" argocd/$FILE
 
       git add .
 

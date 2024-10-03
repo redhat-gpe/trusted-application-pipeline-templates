@@ -7,7 +7,7 @@ spec:
   type: team
   profile:
     # Intentional no displayName for testing
-    email: rhdh@opentlc.com
+    email: rhdh@demo.redhat.com
     picture: https://avatars.dicebear.com/api/identicon/team-a@example.com.svg?background=%23fff&margin=25
   children: []
 {% for index in range(0, gitlab_user_count | int, 1) %}
@@ -21,7 +21,7 @@ spec:
   type: team
   profile:
     # Intentional no displayName for testing
-    email: user{{ index + 1 }}@opentlc.com
+    email: user{{ index + 1 }}@demo.redhat.com
     picture: https://avatars.dicebear.com/api/identicon/team-a@example.com.svg?background=%23fff&margin=25
   parent: rhdh
   children: []
@@ -33,7 +33,7 @@ metadata:
 spec:
   profile:
     # Intentional no displayName for testing
-    email: user{{ index + 1 }}@opentlc.com
+    email: user{{ index + 1 }}@demo.redhat.com
     picture: https://avatars.dicebear.com/api/avataaars/breanna-davison@example.com.svg?background=%23fff
   memberOf: [user{{ index + 1 }}]
 {% endfor %}

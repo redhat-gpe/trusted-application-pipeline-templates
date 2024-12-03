@@ -27,7 +27,7 @@ spec:
                 key: password
                 name: common-password-secret
           - name: SONARQUBE_URL
-            value: https://sonarqube-sonarqube{{ .Values.app.cluster }}
+            value: http://sonarqube.sonarqube.svc:9000
       restartPolicy: Never
       volumes:
       - name: {{ .Values.app.name }}-script-vol

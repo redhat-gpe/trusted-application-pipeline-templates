@@ -1,6 +1,6 @@
 kind: ConfigMap
 metadata:
-  name:  {{ .Values.app.name }}-webhook-script
+  name: webhook-script
 apiVersion: v1
 data:
   playbook.yaml: |

@@ -10,7 +10,28 @@ spec:
       jenkinsfile: |-
         podTemplate(
                 envVars: [
-
+                    envVar(key: 'CI_TYPE', value: 'jenkins'),
+                    envVar(key: 'GIT_URL', value: '{{ .Values.git.repo }}'),
+                    envVar(key: 'COMPONENT_ID', value: '{{ .Values.app.name }}'),
+                    envVar(key: 'TEMP_DIR', value: './results/tmp'),
+                    envVar(key: 'RESULTS', value: './results'),
+                    envVar(key: 'IMAGE', value: '${{ .Values.image.host }}/{{ .Values.image.organization }}/{{ .Values.app.name }}'),
+                    envVar(key: 'IMAGE_REGISTRY_USER', value: 'quayadmin'),
+                    secretEnvVar(key: 'IMAGE_REGISTRY_PASSWORD', secretName: 'common-password-secret', secretKey: 'common_password'),
+                    secretEnvVar(key: 'GITLAB_PASSWORD', secretName: 'common-password-secret', secretKey: 'common_password'),
+                    secretEnvVar(key: 'COSIGN_KEY', secretName: 'signing-secrets', secretKey: 'cosign.key'),
+                    secretEnvVar(key: 'COSIGN_PASSWORD', secretName: 'signing-secrets', secretKey: 'cosign.password'),
+                    envVar(key: 'REKOR_URL', value: 'https://rekor-server-trusted-artifact-signer{{ .Values.app.cluster }}'),
+                    envVar(key: 'CYCLONE_DX_URL', value: 'https://cyclonedx-bom-repo-server-cyclonedx{{ .Values.app.cluster }}'),
+                    secretEnvVar(key: 'ROX_API_TOKEN', secretName: 'stackrox-token', secretKey: 'rox_api_token'),
+                    envVar(key: 'ROX_CENTRAL_ENDPOINT', value: 'central-stackrox{{ .Values.app.cluster }}:443'),
+                    envVar(key: 'SONARQUBE_HOST_URL', value: 'https://sonarqube-sonarqube{{ .Values.app.cluster }}'),
+                    secretEnvVar(key: 'SONAR_TOKEN_WEB_UI', secretName: '{{ .Values.app.name }}-sonarqube-secret', secretKey: 'token'),
+                    secretEnvVar(key: 'OCP_ADMIN_PASSWORD', secretName: 'common-password-secret', secretKey: 'common_password'),
+                    secretEnvVar(key: 'BOMBASTIC_API_URL', secretName: 'trustification-secret', secretKey: 'bombastic_api_url'), #notsecret
+                    secretEnvVar(key: 'OIDC_ISSUER_URL', secretName: 'trustification-secret', secretKey: 'oidc_issuer_url'),
+                    secretEnvVar(key: 'OIDC_CLIENT_ID', secretName: 'trustification-secret', secretKey: 'oidc_client_id'),
+                    secretEnvVar(key: 'OIDC_CLIENT_SECRET', secretName: 'trustification-secret', secretKey: 'oidc_client_secret'),
                 ],
                 activeDeadlineSeconds: 600, // 10m limit is more than enough
                 idleMinutes: 1,

@@ -2,8 +2,8 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   name: quarkus-stssc-template
-  title: Securing a Quarkus Service Software Supply Chain (Tekton)
-  description: Create a Quarkus Service built with Red Hat Trusted Application Pipeline on Tekton
+  title: Securing a Quarkus Service Software Supply Chain (Jenkins)
+  description: Create a Quarkus Service built with Red Hat Trusted Application Pipeline on Jenkins
   tags:
     - recommended
     - java

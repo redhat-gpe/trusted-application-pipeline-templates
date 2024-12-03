@@ -1,0 +1,463 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: my-quarkus-app
+  namespace: jenkins
+spec:
+  strategy:
+    type: JenkinsPipeline
+    jenkinsPipelineStrategy:
+      jenkinsfile: |-
+        podTemplate(
+                envVars: [
+
+                ],
+                activeDeadlineSeconds: 600, // 10m limit is more than enough
+                idleMinutes: 1,
+                workspaceVolume: dynamicPVC(requestsSize: "1Gi"),
+                containers: [
+                        containerTemplate(name: 'jnlp',
+                                image: 'jenkins/inbound-agent:4.13-2-alpine',
+                                runAsUser: '0',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '1Gi',
+                                resourceLimitMemory: '1Gi'),
+                        containerTemplate(name: 'maven',
+                                image: 'maven:3.8.5-openjdk-17',
+                                runAsUser: '0',
+                                ttyEnabled: true,
+                                command: 'cat',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '2Gi'),
+                        containerTemplate(name: 'sonarqube',
+                                image: 'docker.io/sonarsource/sonar-scanner-cli:10.0',
+                                runAsUser: '0',
+                                ttyEnabled: true,
+                                command: 'cat',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '2Gi'),
+                        containerTemplate(name: 'syft',
+                                image: 'quay.io/redhat-appstudio/syft:v0.94.0',
+                                runAsUser: '0',
+                                ttyEnabled: true,
+                                command: 'cat',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '2Gi'),
+                        containerTemplate(name: 'python311',
+                                image: 'registry.access.redhat.com/ubi9/python-311:9.5',
+                                runAsUser: '0',
+                                ttyEnabled: true,
+                                command: 'cat',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '2Gi'),
+                        containerTemplate(name: 'cosign',
+                                image: 'quay.io/redhat-gpte/cosign:2.4.1',
+                                command: 'cat',
+                                runAsUser: '0',
+                                ttyEnabled: true,
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '2Gi'),
+                        containerTemplate(name: 'yq',
+                                image: 'quay.io/redhat-user-workloads/rhtap-integration-tenant/yq-container/yq:5f8db9e69e824d7859b61f97596c4f3f839d6c9e',
+                                command: 'cat',
+                                runAsUser: '0',
+                                ttyEnabled: true,
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '2Gi'),
+                        containerTemplate(name: 'buildah',
+                                image: 'quay.io/redhat-appstudio/buildah:v1.31.0@sha256:34f12c7b72ec2c28f1ded0c494b428df4791c909f1f174dd21b8ed6a57cf5ddb',
+                                envVars: [
+                                    envVar(key: 'DOCKERFILE', value: './Dockerfile'),
+                                    envVar(key: 'CONTEXT', value: '.'),
+                                    envVar(key: 'TLSVERIFY', value: 'false'),
+                                    // secretEnvVar(key: 'POD_ENV_VAR_FROM_SECRET', secretName: 'pod-secret', secretKey: 'password'),
+                                    // secretEnvVar(key: 'EMPTY_POD_ENV_VAR_FROM_SECRET', secretName: 'empty-secret', secretKey: 'password')
+                                ],
+                                runAsUser: '0',
+                                privileged: true,
+                                ttyEnabled: true,
+                                command: 'cat',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '5Gi'),
+                        containerTemplate(name: 'ubi-minimal',
+                                image: 'registry.access.redhat.com/ubi8/ubi-minimal',
+                                runAsUser: '0',
+                                privileged: true,
+                                ttyEnabled: true,
+                                command: 'cat',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '5Gi'),
+                        containerTemplate(name: 'app-utils',
+                                image: 'quay.io/redhat-appstudio/appstudio-utils:5bd7d6cb0b17f9f2eab043a8ad16ba3d90551bc2@sha256:8c7fcf86af40c71aeb58e4279625c8308af5144e2f6b8e28b0ec7e795260e5f7',
+                                runAsUser: '0',
+                                privileged: true,
+                                ttyEnabled: true,
+                                command: 'cat',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '5Gi'),
+                        containerTemplate(name: 'helm',
+                                image: 'alpine/helm:3.11.1',
+                                runAsUser: '0',
+                                privileged: true,
+                                ttyEnabled: true,
+                                command: 'cat',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '5Gi'),
+                        containerTemplate(name: 'oc',
+                                image: 'quay.io/openshift/origin-cli:latest',
+                                runAsUser: '0',
+                                privileged: true,
+                                ttyEnabled: true,
+                                command: 'cat',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '5Gi'),
+                ]
+        ) {
+            node(POD_LABEL) {
+                stage("checkout") {
+                    git branch: params.BRANCH ?: 'master',
+                            url: env.GIT_URL
+                    echo "git checkout done..."
+                }
+                stage("pre-reqs") {
+                    configFileProvider([configFile(fileId: "merge.sboms.py", variable: 'MERGE_SBOMS')]) {
+                      sh """
+                        cat $MERGE_SBOMS > merge-sboms.py
+                      """
+                    }
+                    configFileProvider([configFile(fileId: "create.att.predicate.sh", variable: 'CREATE_ATT_PREDICATE')]) {
+                      sh """
+                        cat $CREATE_ATT_PREDICATE > create-att-predicate.sh
+                        chmod +x create-att-predicate.sh
+                      """
+                    }
+                    container('jnlp') {
+                        sh """
+                            mkdir -p \$RESULTS/init
+                            mkdir -p \$TEMP_DIR/files
+                            echo \$(date +%Y-%m-%dT%H:%M:%SZ) > \$RESULTS/init/START_TIME
+                            echo \$(git rev-parse HEAD) > \$TEMP_DIR/files/GIT_COMMIT
+                        """
+                    }
+                    script {
+                      env.GIT_COMMIT = readFile "${env.TEMP_DIR}/files/GIT_COMMIT"
+                    }
+                }
+                stage("package") {
+                    container('maven') {
+                        sh """
+                            #!/bin/bash -ex
+                            # .m2 is mutable and short-term, we just sym-link the settings.xml there.
+
+                            ls -al
+
+                            mkdir -p /root/.m2
+                            ln -s ../jenkins-nexus/settings.xml /root/.m2/settings.xml
+
+                            ls -al
+
+                            if [ '${params.VERBOSE}' = '1' ]
+                            then
+                                env | sort
+                                mvn --version
+                                df -h
+                            fi
+
+                            mvn package
+
+                            if [ '${params.VERBOSE}' = '1' ]
+                            then
+                                df -h
+                            fi
+                        """
+                    }
+                }
+                stage("scan") {
+                    container('sonarqube') {
+                        sh """
+                            set -x
+                            ls -a
+                            sonar-scanner -X -Dsonar.projectKey=$COMPONENT_ID -Dsonar.sources=./ -Dsonar.host.url=\$SONARQUBE_HOST_URL -Dsonar.login=\$SONAR_TOKEN_WEB_UI -Dsonar.java.binaries=target/classes
+                        """
+                    }
+                }
+                stage("build-sign-image") {
+                    container('buildah') {
+                        sh """
+                            IMAGE_REGISTRY="\${IMAGE%%/*}"
+                            buildah login --username="\$IMAGE_REGISTRY_USER" --password="\$IMAGE_REGISTRY_PASSWORD" \$IMAGE_REGISTRY
+                            ERR=\$?
+                            if [ \$ERR != 0 ]; then
+                                echo "Failed buildah login \$IMAGE_REGISTRY for user \$IMAGE_REGISTRY_USER "
+                                exit \$ERR
+                            fi
+
+                            # Check if the Dockerfile exists
+                            SOURCE_CODE_DIR=.
+                            if [ -e "\$SOURCE_CODE_DIR/\$CONTEXT/\$DOCKERFILE" ]; then
+                                dockerfile_path="\$SOURCE_CODE_DIR/\$CONTEXT/\$DOCKERFILE"
+                            elif [ -e "\$SOURCE_CODE_DIR/\$DOCKERFILE" ]; then
+                                dockerfile_path="\$SOURCE_CODE_DIR/\$DOCKERFILE"
+                            else
+                                echo "Cannot find Dockerfile \$DOCKERFILE"
+                                exit 1
+                            fi
+
+                            BUILDAH_ARGS=()
+                            if [ -n "\${BUILD_ARGS_FILE}" ]; then
+                                BUILDAH_ARGS+=("--build-arg-file=\${SOURCE_CODE_DIR}/\${BUILD_ARGS_FILE}")
+                            fi
+
+                            for build_arg in "\$@"; do
+                                BUILDAH_ARGS+=("--build-arg=\$build_arg")
+                            done
+
+                            # Build the image
+                            buildah build \
+                                "\${BUILDAH_ARGS[@]}" \
+                                --tls-verify=\$TLSVERIFY \
+                                --ulimit nofile=4096:4096 \
+                                -f "\$dockerfile_path" -t \$IMAGE \$SOURCE_CODE_DIR/\$CONTEXT
+
+                            # Push the image
+                            buildah push \
+                                --tls-verify=\$TLSVERIFY \
+                                --retry=5 \
+                                --digestfile \$TEMP_DIR/files/image-digest \$IMAGE \
+                                docker://\$IMAGE
+
+                            # Set task results
+                            buildah images --format '{{ .Name }}:{{ .Tag }}@{{ .Digest }}' | grep -v \$IMAGE > \$RESULTS/BASE_IMAGES_DIGESTS
+                            cat \$TEMP_DIR/files/image-digest | tee \$RESULTS/IMAGE_DIGEST
+                            echo -n "\$IMAGE" | tee \$RESULTS/IMAGE_URL
+
+                            # Save the image so it can be used in the generate-sbom step
+                            buildah push "\$IMAGE" oci:\$TEMP_DIR/files/image
+                        """
+                    }
+                    container('syft') {
+                        sh """
+                            syft dir:. --output cyclonedx-json@1.4=\$TEMP_DIR/files/sbom-source.json
+                            syft oci-dir:\$TEMP_DIR/files/image --output cyclonedx-json@1.4=\$TEMP_DIR/files/sbom-image.json
+                        """
+                    }
+                    container('python311') {
+                        sh """
+                          RESULT_PATH="\$RESULTS/SBOM_BLOB_URL" python3 ./merge-sboms.py
+                        """
+                    }
+                    container('cosign') {
+                        sh """
+                            IMAGE_REGISTRY="\${IMAGE%%/*}"
+                            cosign login --username="\$IMAGE_REGISTRY_USER" --password="\$IMAGE_REGISTRY_PASSWORD" \$IMAGE_REGISTRY
+                            ERR=\$?
+                            if [ \$ERR != 0 ]; then
+                                echo "Failed cosign login \$IMAGE_REGISTRY for user \$IMAGE_REGISTRY_USER"
+                                exit \$ERR
+                            fi
+                            cosign attach sbom --sbom \$TEMP_DIR/files/sbom-cyclonedx.json --type cyclonedx "\$IMAGE"
+                        """
+                    }
+                    container('cosign') {
+                        sh """
+                            IMAGE_REGISTRY="\${IMAGE%%/*}"
+                            cosign login --username="\$IMAGE_REGISTRY_USER" --password="\$IMAGE_REGISTRY_PASSWORD" \$IMAGE_REGISTRY
+                            ERR=\$?
+                            if [ \$ERR != 0 ]; then
+                                echo "Failed cosign login \$IMAGE_REGISTRY for user \$IMAGE_REGISTRY_USER"
+                                exit \$ERR
+                            fi
+                            echo \$COSIGN_KEY | base64 -d > cosign.key
+                            cosign sign -y --key=./cosign.key --rekor-url=\$REKOR_URL \$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
+                        """
+                    }
+                    container('yq') {
+                        sh """
+                            ./create-att-predicate.sh > "\$RESULTS/att-predicate.json"
+                            cat "\$RESULTS/att-predicate.json"
+                        """
+                    }
+                    container('cosign') {
+                        sh """
+                            IMAGE_REGISTRY="\${IMAGE%%/*}"
+                            cosign login --username="\$IMAGE_REGISTRY_USER" --password="\$IMAGE_REGISTRY_PASSWORD" \$IMAGE_REGISTRY
+                            ERR=\$?
+                            if [ \$ERR != 0 ]; then
+                                echo "Failed cosign login \$IMAGE_REGISTRY for user \$IMAGE_REGISTRY_USER"
+                                exit \$ERR
+                            fi
+                            echo \$COSIGN_KEY | base64 -d > cosign.key
+                            cosign attest -y --key=./cosign.key --rekor-url=\$REKOR_URL --predicate "\$RESULTS/att-predicate.json" --type slsaprovenance1 \$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
+                        """
+                    }
+                }
+                stage("upload-sbom-to-cyclonedx-repo") {
+                    container('ubi-minimal') {
+                        sh """
+                            set +x
+                            curl -X POST \$CYCLONE_DX_URL/v1/bom -H "Content-Type: application/vnd.cyclonedx+json; version=1.4" -H "Accept: */*" -d @\$TEMP_DIR/files/sbom-cyclonedx.json -D /tmp/header.txt > /dev/null
+                            LOCATION=\$(cat /tmp/header.txt | grep location: | awk '{print \$2}' | sed 's|http:|https:|g')
+                            echo \$LOCATION
+                        """
+                    }
+                }
+                stage("upload-sbom-to-tpa") {
+                    container('app-utils') {
+                        sh """
+                            set -o errexit -o nounset -o pipefail
+
+                            SBOMS_DIR=\$TEMP_DIR/files
+                            WORKDIR=./wd
+                            mkdir \$WORKDIR
+
+                            filepath=\$TEMP_DIR/files/sbom-cyclonedx.json
+
+                            sed -i 's|"/var/lib/containers/storage/vfs/dir/[^"]*|"\$(params.COMPONENT_ID)|' \$filepath
+
+                            sbom_id="sha256:\$(sha256sum "\$filepath" | cut -d ' ' -f 1)"
+
+                            sbom_path="\$WORKDIR/\$sbom_id.json"
+                            ln -s "\$(realpath "\$filepath")" "\$sbom_path"
+
+                            cp --no-dereference "\$sbom_path" "\${sbom_path}.supported_version"
+
+                            curl_opts=(--silent --show-error --fail-with-body --retry 3)
+
+                            openid_configuration_url="\${OIDC_ISSUER_URL%/}/.well-known/openid-configuration"
+                            echo "Getting OIDC issuer configuration from \$openid_configuration_url"
+
+                            token_endpoint="\$(curl "\${curl_opts[@]}" "\$openid_configuration_url" | jq -r .token_endpoint)"
+
+                            original_sbom_relpath="\$(realpath "\$sbom_path" --relative-base="\$SBOMS_DIR")"
+                            echo
+                            echo "--- Processing \$original_sbom_relpath ---"
+
+                            echo "Getting OIDC token from \$token_endpoint"
+                            token_response="\$(
+                              curl "\${curl_opts[@]}" \
+                                -u "\${OIDC_CLIENT_ID}:\${OIDC_CLIENT_SECRET}" \
+                                -d "grant_type=client_credentials" \
+                                "\$token_endpoint"
+                            )"
+
+                            access_token="\$(jq -r .access_token <<< "\$token_response")"
+                            token_type="\$(jq -r .token_type <<< "\$token_response")"
+                            expires_in="\$(jq -r ".expires_in // empty" <<< "\$token_response")"
+
+                            retry_max_time=0  # no limit
+                            if [[ -n "\$expires_in" ]]; then
+                                retry_max_time="\$expires_in"
+                            fi
+
+                            sbom_id="\$(basename -s .json "\$sbom_path")"
+                            supported_version_of_sbom="\${sbom_path}.supported_version"
+
+                            echo "Uploading SBOM to \$BOMBASTIC_API_URL (with id=\$sbom_id)"
+                            # https://docs.trustification.dev/trustification/user/bombastic.html#publishing-an-sbom-doc
+                            curl "\${curl_opts[@]}" \
+                              --retry-max-time "\$retry_max_time" \
+                              -H "authorization: \$token_type \$access_token" \
+                              -H "transfer-encoding: chunked" \
+                              -H "content-type: application/json" \
+                              --data "@\$supported_version_of_sbom" \
+                              "\$BOMBASTIC_API_URL/api/v1/sbom?id=\$sbom_id"
+                        """
+                    }
+                }
+                stage("acs-image-scan") {
+                    container('ubi-minimal') {
+                        sh """
+                            #!/usr/bin/env bash
+                            set +x
+                            IMAGE=\$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
+                            curl -s -k -L -H "Authorization: Bearer \$ROX_API_TOKEN" \
+                              "https://\$ROX_CENTRAL_ENDPOINT/api/cli/download/roxctl-linux" \
+                              --output ./roxctl > /dev/null
+                            chmod +x ./roxctl > /dev/null
+                            ./roxctl image scan --insecure-skip-tls-verify \
+                              -e "\$ROX_CENTRAL_ENDPOINT" --image "\$IMAGE" --output table
+                        """
+                    }
+                }
+                stage("acs-image-check") {
+                    container('ubi-minimal') {
+                        sh """
+                            #!/usr/bin/env bash
+                            set +x
+                            IMAGE=\$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
+                            curl -s -k -L -H "Authorization: Bearer \$ROX_API_TOKEN" \
+                              "https://\$ROX_CENTRAL_ENDPOINT/api/cli/download/roxctl-linux" \
+                              --output ./roxctl > /dev/null
+                            chmod +x ./roxctl > /dev/null
+                            ./roxctl image check --insecure-skip-tls-verify \
+                              -e "\$ROX_CENTRAL_ENDPOINT" --image "\$IMAGE" --output table
+                        """
+                    }
+                }
+                stage("acs-deployment-check") {
+                    sh """
+                        GITOPS_URL1=\$(echo \$GIT_URL | sed 's/https:\\/\\/*//')
+                        GITOPS_URL2=\${GITOPS_URL1%%.git}
+                        GITOPS_URL=https://\$GITOPS_URL2-gitops.git
+                        rm -rf *
+                        git clone \$GITOPS_URL
+                    """
+                    container('helm') {
+                        sh """
+                            cd \$COMPONENT_ID-gitops/helm/app
+                            helm template --dry-run . | awk -vout=out -F": " '\$0~/^# Source: /{file=out"/"\$2; print "Creating "file; system ("mkdir -p \$(dirname "file"); echo -n "" > "file)} \$0!~/^#/ && \$0!="---"{print \$0 >> file}'
+                        """
+                    }
+                    container('ubi-minimal') {
+                        sh """
+                            #!/usr/bin/env bash
+                            set +x
+                            cd \$COMPONENT_ID-gitops/helm/app/out/quarkus-template/templates
+                            curl -s -k -L -H "Authorization: Bearer \$ROX_API_TOKEN" \
+                              "https://\$ROX_CENTRAL_ENDPOINT/api/cli/download/roxctl-linux" \
+                              --output ./roxctl > /dev/null
+                            chmod +x ./roxctl > /dev/null
+                            ./roxctl deployment check --insecure-skip-tls-verify \
+                              -e "\$ROX_CENTRAL_ENDPOINT"  --file "deployment.yaml" --output table
+                        """
+                    }
+                }
+                stage('resync') {
+                    container('oc') {
+                        sh """
+                            oc login -u admin -p \$OCP_ADMIN_PASSWORD --insecure-skip-tls-verify https://kubernetes.default.svc
+                            oc delete pod -n \$COMPONENT_ID-dev -l \
+                            app.kubernetes.io/instance=\$COMPONENT_ID-dev
+                        """
+                    }
+                }
+            }
+        }
+  triggers:
+    - type: GitLab
+      gitlab:
+        secretReference:
+          name: gitlab-webhook-secret

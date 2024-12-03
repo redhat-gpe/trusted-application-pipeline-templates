@@ -1,7 +1,7 @@
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: my-quarkus-app
+  name: {{ .Values.app.name }}
   namespace: jenkins
 spec:
   strategy:

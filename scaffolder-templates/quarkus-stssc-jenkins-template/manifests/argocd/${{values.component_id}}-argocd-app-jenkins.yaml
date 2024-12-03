@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: ${{ values.destination }}
     targetRevision: HEAD
-    path: ./helm/app
+    path: ./helm/jenkins
     helm:
       parameters:
       - name: namespace.name

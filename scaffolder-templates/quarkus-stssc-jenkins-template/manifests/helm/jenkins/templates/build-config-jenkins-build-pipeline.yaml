@@ -28,7 +28,7 @@ spec:
                     envVar(key: 'SONARQUBE_HOST_URL', value: 'https://sonarqube-sonarqube{{ .Values.app.cluster }}'),
                     secretEnvVar(key: 'SONAR_TOKEN_WEB_UI', secretName: '{{ .Values.app.name }}-sonarqube-secret', secretKey: 'token'),
                     secretEnvVar(key: 'OCP_ADMIN_PASSWORD', secretName: 'common-password-secret', secretKey: 'common_password'),
-                    secretEnvVar(key: 'BOMBASTIC_API_URL', secretName: 'trustification-secret', secretKey: 'bombastic_api_url'), #notsecret
+                    secretEnvVar(key: 'BOMBASTIC_API_URL', secretName: 'trustification-secret', secretKey: 'bombastic_api_url'),
                     secretEnvVar(key: 'OIDC_ISSUER_URL', secretName: 'trustification-secret', secretKey: 'oidc_issuer_url'),
                     secretEnvVar(key: 'OIDC_CLIENT_ID', secretName: 'trustification-secret', secretKey: 'oidc_client_id'),
                     secretEnvVar(key: 'OIDC_CLIENT_SECRET', secretName: 'trustification-secret', secretKey: 'oidc_client_secret'),

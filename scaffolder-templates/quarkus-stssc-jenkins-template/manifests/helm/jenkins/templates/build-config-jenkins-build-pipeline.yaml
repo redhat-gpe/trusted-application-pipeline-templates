@@ -12,6 +12,7 @@ spec:
                 envVars: [
                     envVar(key: 'CI_TYPE', value: 'jenkins'),
                     envVar(key: 'GIT_URL', value: '{{ .Values.git.repo }}'),
+                    envVar(key: 'USER_EMAIL', value: '{{ .Values.git.user_email }}'),
                     envVar(key: 'COMPONENT_ID', value: '{{ .Values.app.name }}'),
                     envVar(key: 'TEMP_DIR', value: './results/tmp'),
                     envVar(key: 'RESULTS', value: './results'),
@@ -155,6 +156,19 @@ spec:
                                 resourceLimitCpu: '1',
                                 resourceRequestMemory: '2Gi',
                                 resourceLimitMemory: '5Gi'),
+{{- if eq .Values.git.verify_commits "enabled" }}
+                        containerTemplate(name: 'gitsign',
+                                image: 'alpine/git:latest',
+                                runAsUser: '0',
+                                privileged: true,
+                                ttyEnabled: true,
+                                command: 'cat',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '5Gi'),
+{{- end }}
+
                 ]
         ) {
             node(POD_LABEL) {
@@ -187,6 +201,28 @@ spec:
                       env.GIT_COMMIT = readFile "${env.TEMP_DIR}/files/GIT_COMMIT"
                     }
                 }
+
+{{- if eq .Values.git.verify_commits "enabled" }}
+                stage('verify-commit') {
+                    container('gitsign') {
+                        sh """
+                            apk add rpm
+                            wget "https://github.com/sigstore/cosign/releases/download/v2.4.1/cosign-linux-amd64"
+                            mv cosign-linux-amd64 /usr/local/bin/cosign
+                            chmod +x /usr/local/bin/cosign
+                            rm -f gitsign_0.11.0_linux_amd64.rpm
+                            wget -q https://github.com/sigstore/gitsign/releases/download/v0.11.0/gitsign_0.11.0_linux_amd64.rpm
+                            rpm -ivh gitsign_0.11.0_linux_amd64.rpm
+                            git config --global --add safe.directory /workspace/repository
+                            cosign initialize --mirror=http://tuf.trusted-artifact-signer.svc --root=http://tuf.trusted-artifact-signer.svc/root.json
+                            git show -s
+                            gitsign verify --certificate-identity=\$USER_EMAIL --certificate-oidc-issuer=http://keycloak.rhsso.svc:8443/auth/realms/trusted-artifact-signer HEAD \
+                            || (echo "Unable to verify commit signature!" && exit 1)
+                        """
+                    }
+                }
+{{- end }}
+
                 stage("package") {
                     container('maven') {
                         sh """

@@ -168,7 +168,7 @@ spec:
           repository_host: {{ '${{ parameters.repo.host }}' }}
           deployment_name: quarkus-template
           user: {{ '${{ user.entity.metadata.name }}' }}
-          user_email: {{ '${{ user.entity.metadata.email }}' }}
+          user_email: {{ '${{ user.entity.metadata.name }}' }}@demo.redhat.com
           verify_commits: {{ '${{ parameters.repo.verify_commits }}' }}
         targetPath: ./tenant-gitops
 

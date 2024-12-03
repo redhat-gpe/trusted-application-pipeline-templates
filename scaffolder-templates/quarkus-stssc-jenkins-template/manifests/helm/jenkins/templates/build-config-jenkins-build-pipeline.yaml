@@ -23,6 +23,7 @@ spec:
                     secretEnvVar(key: 'COSIGN_KEY', secretName: 'signing-secrets', secretKey: 'cosign.key'),
                     secretEnvVar(key: 'COSIGN_PASSWORD', secretName: 'signing-secrets', secretKey: 'cosign.password'),
                     envVar(key: 'REKOR_URL', value: 'https://rekor-server-trusted-artifact-signer{{ .Values.app.cluster }}'),
+                    envVar(key: 'CERTIFICATE_OIDC_ISSUER', value: 'https://keycloak-rhsso{{ .Values.app.cluster }}/auth/realms/openshift'),
                     envVar(key: 'CYCLONE_DX_URL', value: 'https://cyclonedx-bom-repo-server-cyclonedx{{ .Values.app.cluster }}'),
                     secretEnvVar(key: 'ROX_API_TOKEN', secretName: 'stackrox-token', secretKey: 'rox_api_token'),
                     envVar(key: 'ROX_CENTRAL_ENDPOINT', value: 'central-stackrox{{ .Values.app.cluster }}:443'),
@@ -81,15 +82,6 @@ spec:
                                 resourceLimitCpu: '1',
                                 resourceRequestMemory: '2Gi',
                                 resourceLimitMemory: '2Gi'),
-                        containerTemplate(name: 'cosign',
-                                image: 'quay.io/redhat-gpte/cosign:2.4.1',
-                                command: 'cat',
-                                runAsUser: '0',
-                                ttyEnabled: true,
-                                resourceRequestCpu: '1',
-                                resourceLimitCpu: '1',
-                                resourceRequestMemory: '2Gi',
-                                resourceLimitMemory: '2Gi'),
                         containerTemplate(name: 'yq',
                                 image: 'quay.io/redhat-user-workloads/rhtap-integration-tenant/yq-container/yq:5f8db9e69e824d7859b61f97596c4f3f839d6c9e',
                                 command: 'cat',
@@ -105,8 +97,6 @@ spec:
                                     envVar(key: 'DOCKERFILE', value: './Dockerfile'),
                                     envVar(key: 'CONTEXT', value: '.'),
                                     envVar(key: 'TLSVERIFY', value: 'false'),
-                                    // secretEnvVar(key: 'POD_ENV_VAR_FROM_SECRET', secretName: 'pod-secret', secretKey: 'password'),
-                                    // secretEnvVar(key: 'EMPTY_POD_ENV_VAR_FROM_SECRET', secretName: 'empty-secret', secretKey: 'password')
                                 ],
                                 runAsUser: '0',
                                 privileged: true,
@@ -157,8 +147,18 @@ spec:
                                 resourceRequestMemory: '2Gi',
                                 resourceLimitMemory: '5Gi'),
 {{- if eq .Values.git.verify_commits "enabled" }}
-                        containerTemplate(name: 'gitsign',
-                                image: 'alpine/git:latest',
+                        containerTemplate(name: 'gitsign-zip',
+                                image: 'registry.redhat.io/rhtas/gitsign-rhel9:1.1.0',
+                                runAsUser: '0',
+                                privileged: true,
+                                ttyEnabled: true,
+                                command: 'cat',
+                                resourceRequestCpu: '1',
+                                resourceLimitCpu: '1',
+                                resourceRequestMemory: '2Gi',
+                                resourceLimitMemory: '5Gi'),
+                        containerTemplate(name: 'cosign-zip',
+                                image: 'registry.redhat.io/rhtas/cosign-rhel9:1.1.0',
                                 runAsUser: '0',
                                 privileged: true,
                                 ttyEnabled: true,
@@ -189,12 +189,25 @@ spec:
                         chmod +x create-att-predicate.sh
                       """
                     }
+                    container('gitsign-zip') {
+                        sh """
+                            mkdir -p ./bin
+                            cp -vf /usr/local/bin/gitsign_cli_linux_amd64.gz ./bin/gitsign.gz
+                        """
+                    }
+                    container('cosign-zip') {
+                        sh """
+                            cp -vf /usr/local/bin/cosign-linux-amd64.gz ./bin/cosign.gz
+                        """
+                    }
                     container('jnlp') {
                         sh """
                             mkdir -p \$RESULTS/init
                             mkdir -p \$TEMP_DIR/files
                             echo \$(date +%Y-%m-%dT%H:%M:%SZ) > \$RESULTS/init/START_TIME
                             echo \$(git rev-parse HEAD) > \$TEMP_DIR/files/GIT_COMMIT
+                            gunzip -c ./bin/gitsign.gz > ./bin/gitsign && chmod +x ./bin/gitsign && rm -f ./bin/gitsign.gz
+                            gunzip -c ./bin/cosign.gz > ./bin/cosign && chmod +x ./bin/cosign && rm -f ./bin/cosign.gz
                         """
                     }
                     script {
@@ -204,20 +217,10 @@ spec:
 
 {{- if eq .Values.git.verify_commits "enabled" }}
                 stage('verify-commit') {
-                    container('gitsign') {
+                    container('jnlp') {
                         sh """
-                            apk add rpm
-                            wget "https://github.com/sigstore/cosign/releases/download/v2.4.1/cosign-linux-amd64"
-                            mv cosign-linux-amd64 /usr/local/bin/cosign
-                            chmod +x /usr/local/bin/cosign
-                            rm -f gitsign_0.11.0_linux_amd64.rpm
-                            wget -q https://github.com/sigstore/gitsign/releases/download/v0.11.0/gitsign_0.11.0_linux_amd64.rpm
-                            rpm -ivh gitsign_0.11.0_linux_amd64.rpm
-                            git config --global --add safe.directory /workspace/repository
-                            cosign initialize --mirror=http://tuf.trusted-artifact-signer.svc --root=http://tuf.trusted-artifact-signer.svc/root.json
-                            git show -s
-                            gitsign verify --certificate-identity=\$USER_EMAIL --certificate-oidc-issuer=http://keycloak.rhsso.svc:8443/auth/realms/trusted-artifact-signer HEAD \
-                            || (echo "Unable to verify commit signature!" && exit 1)
+                            ./bin/cosign initialize --mirror=http://tuf.trusted-artifact-signer.svc --root=http://tuf.trusted-artifact-signer.svc/root.json
+                            GITSIGN_REKOR_URL=\$REKOR_URL ./bin/gitsign verify --certificate-identity=\$USER_EMAIL --certificate-oidc-issuer=\$CERTIFICATE_OIDC_ISSUER HEAD || (echo "Unable to verify commit signature!" && exit 1)
                         """
                     }
                 }
@@ -228,13 +231,8 @@ spec:
                         sh """
                             #!/bin/bash -ex
                             # .m2 is mutable and short-term, we just sym-link the settings.xml there.
-
-                            ls -al
-
                             mkdir -p /root/.m2
                             ln -s ../jenkins-nexus/settings.xml /root/.m2/settings.xml
-
-                            ls -al
 
                             if [ '${params.VERBOSE}' = '1' ]
                             then
@@ -256,7 +254,6 @@ spec:
                     container('sonarqube') {
                         sh """
                             set -x
-                            ls -a
                             sonar-scanner -X -Dsonar.projectKey=$COMPONENT_ID -Dsonar.sources=./ -Dsonar.host.url=\$SONARQUBE_HOST_URL -Dsonar.login=\$SONAR_TOKEN_WEB_UI -Dsonar.java.binaries=target/classes
                         """
                     }
@@ -326,29 +323,29 @@ spec:
                           RESULT_PATH="\$RESULTS/SBOM_BLOB_URL" python3 ./merge-sboms.py
                         """
                     }
-                    container('cosign') {
+                    container('jnlp') {
                         sh """
                             IMAGE_REGISTRY="\${IMAGE%%/*}"
-                            cosign login --username="\$IMAGE_REGISTRY_USER" --password="\$IMAGE_REGISTRY_PASSWORD" \$IMAGE_REGISTRY
+                            ./bin/cosign login --username="\$IMAGE_REGISTRY_USER" --password="\$IMAGE_REGISTRY_PASSWORD" \$IMAGE_REGISTRY
                             ERR=\$?
                             if [ \$ERR != 0 ]; then
                                 echo "Failed cosign login \$IMAGE_REGISTRY for user \$IMAGE_REGISTRY_USER"
                                 exit \$ERR
                             fi
-                            cosign attach sbom --sbom \$TEMP_DIR/files/sbom-cyclonedx.json --type cyclonedx "\$IMAGE"
+                            ./bin/cosign attach sbom --sbom \$TEMP_DIR/files/sbom-cyclonedx.json --type cyclonedx "\$IMAGE"
                         """
                     }
-                    container('cosign') {
+                    container('jnlp') {
                         sh """
                             IMAGE_REGISTRY="\${IMAGE%%/*}"
-                            cosign login --username="\$IMAGE_REGISTRY_USER" --password="\$IMAGE_REGISTRY_PASSWORD" \$IMAGE_REGISTRY
+                            ./bin/cosign login --username="\$IMAGE_REGISTRY_USER" --password="\$IMAGE_REGISTRY_PASSWORD" \$IMAGE_REGISTRY
                             ERR=\$?
                             if [ \$ERR != 0 ]; then
                                 echo "Failed cosign login \$IMAGE_REGISTRY for user \$IMAGE_REGISTRY_USER"
                                 exit \$ERR
                             fi
                             echo \$COSIGN_KEY | base64 -d > cosign.key
-                            cosign sign -y --key=./cosign.key --rekor-url=\$REKOR_URL \$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
+                            ./bin/cosign sign -y --key=./cosign.key --rekor-url=\$REKOR_URL \$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
                         """
                     }
                     container('yq') {
@@ -357,17 +354,17 @@ spec:
                             cat "\$RESULTS/att-predicate.json"
                         """
                     }
-                    container('cosign') {
+                    container('jnlp') {
                         sh """
                             IMAGE_REGISTRY="\${IMAGE%%/*}"
-                            cosign login --username="\$IMAGE_REGISTRY_USER" --password="\$IMAGE_REGISTRY_PASSWORD" \$IMAGE_REGISTRY
+                            ./bin/cosign login --username="\$IMAGE_REGISTRY_USER" --password="\$IMAGE_REGISTRY_PASSWORD" \$IMAGE_REGISTRY
                             ERR=\$?
                             if [ \$ERR != 0 ]; then
                                 echo "Failed cosign login \$IMAGE_REGISTRY for user \$IMAGE_REGISTRY_USER"
                                 exit \$ERR
                             fi
                             echo \$COSIGN_KEY | base64 -d > cosign.key
-                            cosign attest -y --key=./cosign.key --rekor-url=\$REKOR_URL --predicate "\$RESULTS/att-predicate.json" --type slsaprovenance1 \$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
+                            ./bin/cosign attest -y --key=./cosign.key --rekor-url=\$REKOR_URL --predicate "\$RESULTS/att-predicate.json" --type slsaprovenance1 \$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
                         """
                     }
                 }

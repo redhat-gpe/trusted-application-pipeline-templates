@@ -34,7 +34,7 @@ data:
             method: POST
             body_format: form-urlencoded
             body:
-              url: https://kubernetes.default.svc/apis/build.openshift.io/v1/namespaces/jenkins/buildconfigs/{{ "{{" }} git_project {{ "}}" }}/webhooks/{{ "{{" }} webhook_secret {{ "}}" }}/gitlab
+              url: https://kubernetes.default.svc/apis/build.openshift.io/v1/namespaces/jenkins/buildconfigs/{{ "{{" }} git_project {{ "}}" }}-build/webhooks/{{ "{{" }} webhook_secret {{ "}}" }}/gitlab
               push_events: true
               enable_ssl_verification: false
             headers:

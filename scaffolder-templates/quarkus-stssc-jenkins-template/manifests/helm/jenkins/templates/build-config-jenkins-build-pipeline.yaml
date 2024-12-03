@@ -15,7 +15,7 @@ spec:
                     envVar(key: 'COMPONENT_ID', value: '{{ .Values.app.name }}'),
                     envVar(key: 'TEMP_DIR', value: './results/tmp'),
                     envVar(key: 'RESULTS', value: './results'),
-                    envVar(key: 'IMAGE', value: '${{ .Values.image.host }}/{{ .Values.image.organization }}/{{ .Values.app.name }}'),
+                    envVar(key: 'IMAGE', value: '{{ .Values.image.host }}/{{ .Values.image.organization }}/{{ .Values.app.name }}'),
                     envVar(key: 'IMAGE_REGISTRY_USER', value: 'quayadmin'),
                     secretEnvVar(key: 'IMAGE_REGISTRY_PASSWORD', secretName: 'common-password-secret', secretKey: 'common_password'),
                     secretEnvVar(key: 'GITLAB_PASSWORD', secretName: 'common-password-secret', secretKey: 'common_password'),

@@ -22,7 +22,7 @@ spec:
                     secretEnvVar(key: 'GITLAB_PASSWORD', secretName: 'common-password-secret', secretKey: 'password'),
                     secretEnvVar(key: 'COSIGN_KEY', secretName: 'signing-secrets', secretKey: 'cosign.key'),
                     secretEnvVar(key: 'COSIGN_PASSWORD', secretName: 'signing-secrets', secretKey: 'cosign.password'),
-                    envVar(key: 'REKOR_URL', value: 'https://rekor-server-trusted-artifact-signer{{ .Values.app.cluster }}'),
+                    envVar(key: 'REKOR_URL', value: 'http://rekor-server.trusted-artifact-signer.svc'),
                     envVar(key: 'CERTIFICATE_OIDC_ISSUER', value: 'https://keycloak-rhsso{{ .Values.app.cluster }}/auth/realms/openshift'),
                     envVar(key: 'CYCLONE_DX_URL', value: 'https://cyclonedx-bom-repo-server-cyclonedx{{ .Values.app.cluster }}'),
                     secretEnvVar(key: 'ROX_API_TOKEN', secretName: 'stackrox-token', secretKey: 'rox_api_token'),

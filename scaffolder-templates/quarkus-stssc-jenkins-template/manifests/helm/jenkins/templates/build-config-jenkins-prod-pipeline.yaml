@@ -18,6 +18,7 @@ spec:
                 envVar(key: 'IMAGE', value: '{{ .Values.image.host }}/{{ .Values.image.organization }}/{{ .Values.app.name }}'),
                 envVar(key: 'IMAGE_REGISTRY_USER', value: 'quayadmin'),
                 secretEnvVar(key: 'IMAGE_REGISTRY_PASSWORD', secretName: 'common-password-secret', secretKey: 'password'),
+                envVar(key: 'STRICT', value: 'false'),
                 secretEnvVar(key: 'COSIGN_PUB', secretName: 'signing-secrets', secretKey: 'cosign.pub'),
                 ],
                 activeDeadlineSeconds: 600, // 10m limit is more than enough
@@ -69,7 +70,7 @@ EOF
                             --rekor-url http://rekor-server.trusted-artifact-signer.svc \
                             --ignore-rekor=false \
                             --info=true \
-                            --strict=false \
+                            --strict=\$STRICT \
                             --show-successes \
                             --effective-time=now \
                             --output yaml=./report.yaml --output 'appstudio=./test_output' --output data=./data.yaml --output attestation=./attestations.jsonl --output json=./report-json.json
@@ -80,7 +81,6 @@ EOF
                             cat ./report-json.json
 
                             jq . ./test_output
-
                         """
                     }
                 }

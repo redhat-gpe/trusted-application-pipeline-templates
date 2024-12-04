@@ -43,15 +43,15 @@ spec:
                         echo \$(curl -s \$GIT_HOST/api/v4/projects)
                         GIT_PROJECT_ID=\$(curl -s \$GIT_HOST/api/v4/projects | jq --arg key \$COMPONENT_ID '.[] | select( .name == \$key )' | jq .id)
                         curl -s \$GIT_HOST/api/v4/projects/\$GIT_PROJECT_ID/releases | jq -r .[0].tag_name > ./GIT_TAG
-cat <<EOF > ./images.yaml
----
-components:
-- containerImage: "\$IMAGE"
-  source:
-    git:
-      url: "\$GIT_URL"
-      revision: "\$(cat ./GIT_COMMIT)"
-EOF
+        cat <<EOF > ./images.yaml
+        ---
+        components:
+        - containerImage: "\$IMAGE"
+        source:
+            git:
+            url: "\$GIT_URL"
+            revision: "\$(cat ./GIT_COMMIT)"
+        EOF
 
                             echo \$COSIGN_PUB | base64 -d > ./cosign.pub
                         """

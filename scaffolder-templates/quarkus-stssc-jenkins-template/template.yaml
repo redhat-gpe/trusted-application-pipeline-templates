@@ -1,9 +1,9 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: quarkus-stssc-template
-  title: Securing a Quarkus Service Software Supply Chain (Tekton)
-  description: Create a Quarkus Service built with Red Hat Trusted Application Pipeline on Tekton
+  name: quarkus-stssc-jenkins-template
+  title: Securing a Quarkus Service Software Supply Chain (Jenkins)
+  description: Create a Quarkus Service built with Red Hat Trusted Application Pipeline on Jenkins
   tags:
     - recommended
     - java
@@ -53,25 +53,10 @@ spec:
           title: Image Registry
           type: string
           enum:
-            - Openshift
             - Quay
       dependencies:
         image_registry:
           oneOf:
-            - properties:
-                image_registry:
-                  enum:
-                    - Openshift
-                image_host:
-                  title: Image Host
-                  type: string
-                  description: Host for storing image
-                  default: image-registry.openshift-image-registry.svc:5000
-                image_tag:
-                  title: Image Tag
-                  default: latest
-                  type: string
-                  description: Build Image tag
             - properties:
                 image_registry:
                   enum:
@@ -183,6 +168,7 @@ spec:
           repository_host: {{ '${{ parameters.repo.host }}' }}
           deployment_name: quarkus-template
           user: {{ '${{ user.entity.metadata.name }}' }}
+          user_email: {{ '${{ user.entity.metadata.name }}' }}@demo.redhat.com
           verify_commits: {{ '${{ parameters.repo.verify_commits }}' }}
         targetPath: ./tenant-gitops
 

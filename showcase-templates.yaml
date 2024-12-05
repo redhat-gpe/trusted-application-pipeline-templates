@@ -7,4 +7,6 @@ spec:
   type: url
   targets:
      - https://{{ gitlab_host }}/{{ gitlab_group }}/trusted-application-pipeline-templates/blob/main/scaffolder-templates/quarkus-stssc-template/template.yaml
+{% if ocp4_workload_trusted_application_pipeline_jenkins_enabled is defined and ocp4_workload_trusted_application_pipeline_jenkins_enabled %}
      - https://{{ gitlab_host }}/{{ gitlab_group }}/trusted-application-pipeline-templates/blob/main/scaffolder-templates/quarkus-stssc-jenkins-template/template.yaml
+{% endif %}

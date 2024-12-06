@@ -13,7 +13,7 @@ spec:
           - '-c'
           - |
             set -x
-            ansible-playbook -i localhost /scripts/playbook.yaml -e git_token=$(cat /tokens/token) -e webhook_secret=$(cat /secrets/secret)
+            ansible-playbook -i localhost /scripts/playbook.yaml -e git_token=$(cat /tokens/token) -e webhook_secret=$(cat /secrets/WebHookSecretKey)
         image: quay.io/agnosticd/ee-multicloud:latest
         volumeMounts:
           - mountPath: /scripts

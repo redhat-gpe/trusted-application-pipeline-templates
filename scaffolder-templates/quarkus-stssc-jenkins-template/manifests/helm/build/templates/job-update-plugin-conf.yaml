@@ -18,8 +18,6 @@ spec:
           - |
             set +x
 
-            echo 'admin:$TOKEN'
-
             curl --user admin:$TOKEN --data-urlencode "script=$(< /scripts/update-plugin-conf.groovy)" https://jenkins-jenkins{{ .Values.app.cluster }}/scriptText
           volumeMounts:
             - mountPath: /scripts

@@ -14,7 +14,7 @@ spec:
                 envVars: [
                 envVar(key: 'GIT_URL', value: '{{ .Values.git.repo }}'),
                 envVar(key: 'COMPONENT_ID', value: '{{ .Values.app.name }}'),
-                envVar(key: 'ENVIRON', value: 'preprod'),
+                envVar(key: 'ENVIRON', value: 'prod'),
                 secretEnvVar(key: 'ROOT_USER_PASSWORD', secretName: 'common-password-secret', secretKey: 'password'),
                 secretEnvVar(key: 'ARGOCD_PASSWORD', secretName: 'common-password-secret', secretKey: 'password'),
                 envVar(key: 'IMAGE', value: '{{ .Values.image.host }}/{{ .Values.image.organization }}/{{ .Values.app.name }}'),

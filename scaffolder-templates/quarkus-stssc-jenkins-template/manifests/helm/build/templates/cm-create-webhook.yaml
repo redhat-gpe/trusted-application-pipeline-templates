@@ -1,6 +1,8 @@
 kind: ConfigMap
 metadata:
   name: webhook-script
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 apiVersion: v1
 data:
   playbook.yaml: |
@@ -34,7 +36,7 @@ data:
             method: POST
             body_format: form-urlencoded
             body:
-              url: https://kubernetes.default.svc/apis/build.openshift.io/v1/namespaces/jenkins/buildconfigs/{{ "{{" }} git_project {{ "}}" }}-build/webhooks/{{ "{{" }} webhook_secret {{ "}}" }}/gitlab
+              url: https://kubernetes.default.svc/apis/build.openshift.io/v1/namespaces/{{ .Values.app.name }}-dev/buildconfigs/{{ "{{" }} git_project {{ "}}" }}-build/webhooks/{{ "{{" }} webhook_secret {{ "}}" }}/gitlab
               push_events: true
               enable_ssl_verification: false
             headers:
@@ -48,7 +50,7 @@ data:
             method: POST
             body_format: form-urlencoded
             body:
-              url: http://nginx.jenkins.svc:7777/apis/build.openshift.io/v1/namespaces/jenkins/buildconfigs/{{ "{{" }} git_project {{ "}}" }}-preprod/webhooks/{{ "{{" }} webhook_secret {{ "}}" }}/gitlab
+              url: http://nginx.jenkins.svc:7777/apis/build.openshift.io/v1/namespaces/{{ .Values.app.name }}-dev/buildconfigs/{{ "{{" }} git_project {{ "}}" }}-preprod/webhooks/{{ "{{" }} webhook_secret {{ "}}" }}/gitlab
               push_events: false
               tag_push_events: true
               custom_webhook_template: '{"ref":"refs/heads/master","commits":[{"id":"75797c723b990ae61c6cb29e3b6abeeb0b898c1a","message":"initial commit","title":"initial commit","author":{"name":"Scaffolder","email":"scaffolder@backstage.io"}}]}'
@@ -64,7 +66,7 @@ data:
             method: POST
             body_format: form-urlencoded
             body:
-              url: http://nginx.jenkins.svc:7777/apis/build.openshift.io/v1/namespaces/jenkins/buildconfigs/{{ "{{" }} git_project {{ "}}" }}-prod/webhooks/{{ "{{" }} webhook_secret {{ "}}" }}/gitlab
+              url: http://nginx.jenkins.svc:7777/apis/build.openshift.io/v1/namespaces/{{ .Values.app.name }}-dev/buildconfigs/{{ "{{" }} git_project {{ "}}" }}-prod/webhooks/{{ "{{" }} webhook_secret {{ "}}" }}/gitlab
               push_events: false
               releases_events: true
               custom_webhook_template: '{"ref":"refs/heads/master","commits":[{"id":"75797c723b990ae61c6cb29e3b6abeeb0b898c1a","message":"initial commit","title":"initial commit","author":{"name":"Scaffolder","email":"scaffolder@backstage.io"}}]}'

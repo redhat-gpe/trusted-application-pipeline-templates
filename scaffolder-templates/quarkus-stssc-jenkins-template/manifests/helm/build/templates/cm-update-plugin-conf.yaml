@@ -1,0 +1,15 @@
+kind: ConfigMap
+metadata:
+  name: update-plugin-conf-script
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+apiVersion: v1
+data:
+  update-plugin-conf.groovy: |
+    a=Jenkins.instance.getExtensionList(io.fabric8.jenkins.openshiftsync.GlobalPluginConfiguration.class)[0];
+    b=a.namespaces as List
+    b.add('{{ .Values.app.name }}-dev')
+    a.namespaces=b
+    a.save()
+    a.stop()
+    a.start()

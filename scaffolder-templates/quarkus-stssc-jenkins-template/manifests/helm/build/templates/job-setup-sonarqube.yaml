@@ -2,8 +2,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ .Values.app.name }}-sonarqube-setup-job
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   backoffLimit: 100
   template:

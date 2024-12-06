@@ -1,31 +1,34 @@
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: {{ .Values.app.name }}-preprod
-  namespace: jenkins
+  name: {{ .Values.app.name }}-prod
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   strategy:
     type: JenkinsPipeline
     jenkinsPipelineStrategy:
       jenkinsfile: |-
         podTemplate(
+                namespace: "{{ .Values.app.name }}-dev",
                 envVars: [
                 envVar(key: 'GIT_URL', value: '{{ .Values.git.repo }}'),
                 envVar(key: 'COMPONENT_ID', value: '{{ .Values.app.name }}'),
-                envVar(key: 'ENVIRON', value: 'preprod'),
+                envVar(key: 'ENVIRON', value: 'prod'),
                 secretEnvVar(key: 'ROOT_USER_PASSWORD', secretName: 'common-password-secret', secretKey: 'password'),
                 secretEnvVar(key: 'ARGOCD_PASSWORD', secretName: 'common-password-secret', secretKey: 'password'),
                 envVar(key: 'IMAGE', value: '{{ .Values.image.host }}/{{ .Values.image.organization }}/{{ .Values.app.name }}'),
                 envVar(key: 'IMAGE_REGISTRY_USER', value: 'quayadmin'),
                 secretEnvVar(key: 'IMAGE_REGISTRY_PASSWORD', secretName: 'common-password-secret', secretKey: 'password'),
                 envVar(key: 'STRICT', value: 'false'),
-                secretEnvVar(key: 'COSIGN_PUB', secretName: 'signing-secrets', secretKey: 'cosign.pub'),
+                secretEnvVar(key: 'COSIGN_PUB_ENCODED', secretName: 'signing-secrets', secretKey: 'cosign.pub'),
                 ],
                 activeDeadlineSeconds: 600, // 10m limit is more than enough
                 idleMinutes: 1,
                 workspaceVolume: dynamicPVC(requestsSize: "2Gi"),
                 containers: [
                         containerTemplate(name: 'jnlp', image: 'jenkins/inbound-agent:4.13-2-alpine', runAsUser: '0', resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '1Gi', resourceLimitMemory: '1Gi'),
+                        containerTemplate(name: 'app-utils', image: 'quay.io/redhat-appstudio/appstudio-utils:5bd7d6cb0b17f9f2eab043a8ad16ba3d90551bc2@sha256:8c7fcf86af40c71aeb58e4279625c8308af5144e2f6b8e28b0ec7e795260e5f7', runAsUser: '0', privileged: true, ttyEnabled: true, command: 'cat', resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '2Gi', resourceLimitMemory: '5Gi'),
                         containerTemplate(name: 'ec', image: 'quay.io/enterprise-contract/ec-cli:362c6d6824695987bcdb7936c2efa35fd8ffb0e0', runAsUser: '0', command: 'cat', ttyEnabled: true, resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '1Gi', resourceLimitMemory: '1Gi'),
                         containerTemplate(name: 'skopeo', image: 'registry.redhat.io/ubi9/skopeo:9.5', runAsUser: '0', command: 'cat', ttyEnabled: true, resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '1Gi', resourceLimitMemory: '1Gi'),
                         containerTemplate(name: 'argocd', image: 'quay.io/redhat-gpte/argocd-cli:v2.8.4', runAsUser: '0', command: 'cat', ttyEnabled: true, resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '1Gi', resourceLimitMemory: '1Gi'),
@@ -35,10 +38,13 @@ spec:
                 stage("verify-enterprise-contract") {
                     git branch: 'master', url: env.GIT_URL
                     echo "git checkout done..."
-                    container('jnlp') {
+                    container('app-utils') {
                         sh """
-                            echo \$(git rev-parse HEAD) > ./GIT_COMMIT
-                            echo \$(git tag --sort=committerdate | tail -1) > ./GIT_TAG
+                        echo \$(git rev-parse HEAD) > ./GIT_COMMIT
+                        GIT_HOST=\${GIT_URL%%/development*}
+                        echo \$(curl -s \$GIT_HOST/api/v4/projects)
+                        GIT_PROJECT_ID=\$(curl -s \$GIT_HOST/api/v4/projects | jq --arg key \$COMPONENT_ID '.[] | select( .name == \$key )' | jq .id)
+                        curl -s \$GIT_HOST/api/v4/projects/\$GIT_PROJECT_ID/releases | jq -r .[0].tag_name > ./GIT_TAG
         cat <<EOF > ./images.yaml
         ---
         components:
@@ -49,7 +55,7 @@ spec:
             revision: "\$(cat ./GIT_COMMIT)"
         EOF
 
-                            echo \$COSIGN_PUB | base64 -d > ./cosign.pub
+                            echo \$COSIGN_PUB_ENCODED | base64 -d > ./cosign.pub
                         """
                     }
                     container('ec') {
@@ -85,44 +91,45 @@ spec:
                         sh """
                             IMAGE_REGISTRY="\${IMAGE%%/*}"
                             skopeo login -u \$IMAGE_REGISTRY_USER -p \$IMAGE_REGISTRY_PASSWORD \$IMAGE_REGISTRY
-                            skopeo copy docker://\$IMAGE:latest docker://\$IMAGE:\$(cat ./GIT_TAG)
+                            skopeo copy docker://\$IMAGE:\$(cat ./GIT_TAG)  docker://\$IMAGE:prod-\$(cat ./GIT_TAG)
                         """
                     }
                 }
                 stage("update-deployment") {
-                    container('jnlp') {
+                    container('app-utils') {
                         sh """
-                        git config --global user.email "root@demo.redhat.com"
+                            git config --global user.email "root@demo.redhat.com"
 
-                        git config --global user.name "Administrator"
+                            git config --global user.name "Administrator"
 
-                        GITOPS_URL1=\$(echo \$GIT_URL | sed 's/https:\\/\\/*//')
-                        GITOPS_URL2=\${GITOPS_URL1%%.git}
-                        GITOPS_URL=https://root:\$ROOT_USER_PASSWORD@\$GITOPS_URL2-gitops.git
-                        GIT_TAG=\$(cat ./GIT_TAG)
-                        rm -rf *
-                        git clone \$GITOPS_URL
+                            GITOPS_URL1=\$(echo \$GIT_URL | sed 's/https:\\/\\/*//')
+                            GITOPS_URL2=\${GITOPS_URL1%%.git}
+                            GITOPS_URL=https://root:\$ROOT_USER_PASSWORD@\$GITOPS_URL2-gitops.git
+                            GIT_TAG=\$(cat ./GIT_TAG)
 
-                        cd \$COMPONENT_ID-gitops
+                            rm -rf *
+                            git clone \$GITOPS_URL
 
-                        NAMESPACE=\$COMPONENT_ID-\$ENVIRON
+                            cd \$COMPONENT_ID-gitops
 
-                        FILE=\$COMPONENT_ID-argocd-app-\$ENVIRON.yaml
+                            NAMESPACE=\$COMPONENT_ID-\$ENVIRON
 
-                        sed -i "22s/.*/        value: '\$GIT_TAG'/" argocd/\$FILE
+                            FILE=\$COMPONENT_ID-argocd-app-\$ENVIRON.yaml
 
-                        git add .
+                            sed -i "22s/.*/        value: 'prod-\$GIT_TAG'/" argocd/\$FILE
 
-                        git commit -m "Commit image tag \$GIT_TAG to \$ENVIRON" > /dev/null 2>&1 || echo ''
+                            git add .
 
-                        git push > /dev/null 2>&1 || echo ''
+                            git commit -m "Commit image tag prod-\$GIT_TAG to \$ENVIRON" > /dev/null 2>&1 || echo ''
+
+                            git push > /dev/null 2>&1 || echo ''
                         """
                     }
                     container('argocd') {
                         sh """
-                        argocd login --grpc-web --username admin --password \$ARGOCD_PASSWORD --insecure argocd-server.janus-argocd.svc:80
-                        argocd app terminate-op \$COMPONENT_ID-bootstrap > /dev/null 2>&1 || echo ''
-                        argocd app sync --async \$COMPONENT_ID-bootstrap
+                            argocd login --grpc-web --username admin --password \$ARGOCD_PASSWORD --insecure argocd-server.janus-argocd.svc:80
+                            argocd app terminate-op \$COMPONENT_ID-bootstrap > /dev/null 2>&1 || echo ''
+                            argocd app sync --async \$COMPONENT_ID-bootstrap
                         """
                     }
                 }

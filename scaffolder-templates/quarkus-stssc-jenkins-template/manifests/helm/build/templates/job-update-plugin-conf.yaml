@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: update-plugin-conf-job.yaml
+spec:
+  selector: {}
+  template:
+    metadata:
+      name: update-plugin-conf
+    spec:
+      containers:
+        - name: update-plugin-conf
+          image: image-registry.openshift-image-registry.svc:5000/openshift/tools:latest
+          imagePullPolicy: IfNotPresent
+          command:
+          - /bin/bash
+          - '-c'
+          - |
+            set +x
+
+            curl --user admin:$TOKEN --data-urlencode "script=$(< /scripts/update-plugin-conf.groovy)" https://jenkins-jenkins{{ .Values.app.cluster }}/scriptText
+          volumeMounts:
+            - mountPath: /scripts
+              name: script-vol
+          env:
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: token
+                  name: jenkins-token-secret
+      restartPolicy: OnFailure
+      serviceAccountName: job-runner
+      volumes:
+      - name: script-vol
+        configMap:
+          name: update-plugin-conf-script

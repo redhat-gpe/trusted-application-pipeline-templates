@@ -1,0 +1,26 @@
+{{- if ne .Values.git.verify_commits "enabled" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.app.name }}-start-build-job.yaml
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  selector: {}
+  template:
+    metadata:
+      name: {{ .Values.app.name }}-start-build
+    spec:
+      containers:
+        - name: {{ .Values.app.name }}--start-build
+          image: image-registry.openshift-image-registry.svc:5000/openshift/tools:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+          args:
+            - '-ec'
+            - >-
+              oc start-build {{ .Values.app.name }}-build
+      restartPolicy: OnFailure
+      serviceAccountName: job-runner
+{{- end }}

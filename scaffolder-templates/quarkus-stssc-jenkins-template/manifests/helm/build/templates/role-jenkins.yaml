@@ -2,6 +2,8 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ .Values.app.name }}-jenkins
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 rules:
 - apiGroups: [""]
   resources: ["pods"]

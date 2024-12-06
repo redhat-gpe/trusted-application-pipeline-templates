@@ -3,8 +3,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ .Values.app.name }}-start-build-job.yaml
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
 spec:
   selector: {}
   template:

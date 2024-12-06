@@ -60,7 +60,7 @@ data:
                 kind: Secret
                 apiVersion: v1
                 metadata:
-                  name: {{ .Values.app.name }}-sonarqube-secret
+                  name: sonarqube-secret
                   namespace: {{ .Release.Namespace }}
                 stringData:
                   token: '{{ "{{" }} r_uri.json.token {{ "}}" }}'

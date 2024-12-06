@@ -2,13 +2,13 @@ kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
   name: {{ .Values.app.name }}-build
-  namespace: jenkins
 spec:
   strategy:
     type: JenkinsPipeline
     jenkinsPipelineStrategy:
       jenkinsfile: |-
         podTemplate(
+                namespace: "{{ .Values.app.name }}-dev",
                 envVars: [
                     envVar(key: 'CI_TYPE', value: 'jenkins'),
                     envVar(key: 'GIT_URL', value: '{{ .Values.git.repo }}'),
@@ -20,17 +20,17 @@ spec:
                     envVar(key: 'IMAGE_REGISTRY_USER', value: 'quayadmin'),
                     secretEnvVar(key: 'IMAGE_REGISTRY_PASSWORD', secretName: 'common-password-secret', secretKey: 'password'),
                     secretEnvVar(key: 'GITLAB_PASSWORD', secretName: 'common-password-secret', secretKey: 'password'),
-                    secretEnvVar(key: 'COSIGN_KEY', secretName: 'signing-secrets', secretKey: 'cosign.key'),
-                    secretEnvVar(key: 'COSIGN_PASSWORD', secretName: 'signing-secrets', secretKey: 'cosign.password'),
+                    secretEnvVar(key: 'COSIGN_KEY_ENCODED', secretName: 'signing-secrets', secretKey: 'cosign.key'),
+                    secretEnvVar(key: 'COSIGN_PASSWORD_ENCODED', secretName: 'signing-secrets', secretKey: 'cosign.password'),
                     envVar(key: 'REKOR_URL', value: 'http://rekor-server.trusted-artifact-signer.svc'),
                     envVar(key: 'CERTIFICATE_OIDC_ISSUER', value: 'https://keycloak-rhsso{{ .Values.app.cluster }}/auth/realms/openshift'),
                     envVar(key: 'CYCLONE_DX_URL', value: 'http://cyclonedx-bom-repo-server.cyclonedx.svc:8080'),
                     secretEnvVar(key: 'ROX_API_TOKEN', secretName: 'stackrox-token', secretKey: 'rox_api_token'),
                     envVar(key: 'ROX_CENTRAL_ENDPOINT', value: 'central.stackrox.svc:443'),
                     envVar(key: 'SONARQUBE_HOST_URL', value: 'http://sonarqube.sonarqube.svc:9000'),
-                    secretEnvVar(key: 'SONAR_TOKEN_WEB_UI', secretName: '{{ .Values.app.name }}-sonarqube-secret', secretKey: 'token'),
+                    secretEnvVar(key: 'SONAR_TOKEN_WEB_UI', secretName: 'sonarqube-secret', secretKey: 'token'),
                     secretEnvVar(key: 'OCP_ADMIN_PASSWORD', secretName: 'common-password-secret', secretKey: 'password'),
-                    secretEnvVar(key: 'BOMBASTIC_API_URL', secretName: 'trustification-secret', secretKey: 'bombastic_api_url'),
+                    secretEnvVar(key: 'BOMBASTIC_API_URL', secretName: 'trustification-secret', secretKey: 'bombastic_api_url'), #notsecret
                     secretEnvVar(key: 'OIDC_ISSUER_URL', secretName: 'trustification-secret', secretKey: 'oidc_issuer_url'),
                     secretEnvVar(key: 'OIDC_CLIENT_ID', secretName: 'trustification-secret', secretKey: 'oidc_client_id'),
                     secretEnvVar(key: 'OIDC_CLIENT_SECRET', secretName: 'trustification-secret', secretKey: 'oidc_client_secret'),
@@ -232,8 +232,8 @@ spec:
                                 echo "Failed cosign login \$IMAGE_REGISTRY for user \$IMAGE_REGISTRY_USER"
                                 exit \$ERR
                             fi
-                            echo \$COSIGN_KEY | base64 -d > cosign.key
-                            ./bin/cosign sign -y --key=./cosign.key --rekor-url=\$REKOR_URL \$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
+                            echo \$COSIGN_KEY_ENCODED | base64 -d > cosign.key
+                            COSIGN_PASSWORD=\$(echo \$COSIGN_PASSWORD_ENCODED | base64 -d) ./bin/cosign sign -y --key=./cosign.key --rekor-url=\$REKOR_URL \$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
                         """
                     }
                     container('yq') {
@@ -251,8 +251,8 @@ spec:
                                 echo "Failed cosign login \$IMAGE_REGISTRY for user \$IMAGE_REGISTRY_USER"
                                 exit \$ERR
                             fi
-                            echo \$COSIGN_KEY | base64 -d > cosign.key
-                            ./bin/cosign attest -y --key=./cosign.key --rekor-url=\$REKOR_URL --predicate "\$RESULTS/att-predicate.json" --type slsaprovenance1 \$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
+                            echo \$COSIGN_KEY_ENCODED | base64 -d > cosign.key
+                            COSIGN_PASSWORD=\$(echo \$COSIGN_PASSWORD_ENCODED | base64 -d) ./bin/cosign attest -y --key=./cosign.key --rekor-url=\$REKOR_URL --predicate "\$RESULTS/att-predicate.json" --type slsaprovenance1 \$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
                         """
                     }
                 }

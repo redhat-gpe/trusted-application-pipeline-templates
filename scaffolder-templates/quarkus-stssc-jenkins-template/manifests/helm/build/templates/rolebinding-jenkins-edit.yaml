@@ -1,13 +1,13 @@
-kind: ClusterRoleBinding
+kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Values.app.name }}-jobrunner-edit
+  name: jenkins-edit
   annotations:
     argocd.argoproj.io/sync-wave: "-2"
 subjects:
   - kind: ServiceAccount
-    name: job-runner
-    namespace: {{ .Values.app.name }}-dev
+    name: jenkins
+    namespace: jenkins
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

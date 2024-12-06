@@ -12,7 +12,7 @@ git:
   token: ''
   webhookSecret: ''
   verify_commits: ${{ values.verify_commits }}
-
+  user_email: ${{ values.user_email }}
 
 image:
   registry: ${{values.image_registry}}

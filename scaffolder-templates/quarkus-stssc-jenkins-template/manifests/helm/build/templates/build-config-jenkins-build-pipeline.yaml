@@ -277,7 +277,7 @@ spec:
 
                             filepath=\$TEMP_DIR/files/sbom-cyclonedx.json
 
-                            sed -i 's|"/var/lib/containers/storage/vfs/dir/[^"]*|"\$(params.COMPONENT_ID)|' \$filepath
+                            sed -i 's|"./results/tmp/files/image|"'"$COMPONENT_ID"'|' \$filepath
 
                             sbom_id="sha256:\$(sha256sum "\$filepath" | cut -d ' ' -f 1)"
 

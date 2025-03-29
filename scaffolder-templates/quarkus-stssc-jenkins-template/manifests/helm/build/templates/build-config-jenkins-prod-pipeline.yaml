@@ -67,7 +67,7 @@ spec:
                             ec validate image \
                             --verbose \
                             --images ./images.yaml \
-                            --policy git::github.com/redhat-gpe/config//default \
+                            --policy git::github.com/rhpds/jenkins-rhtap-config//default \
                             --public-key ./cosign.pub \
                             --rekor-url http://rekor-server.trusted-artifact-signer.svc \
                             --ignore-rekor=false \

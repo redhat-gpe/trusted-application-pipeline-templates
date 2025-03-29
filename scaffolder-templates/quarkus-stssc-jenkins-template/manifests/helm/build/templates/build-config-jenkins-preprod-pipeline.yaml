@@ -27,7 +27,7 @@ spec:
                 idleMinutes: 1,
                 workspaceVolume: dynamicPVC(requestsSize: "2Gi"),
                 containers: [
-                        containerTemplate(name: 'jnlp', image: 'jenkins/inbound-agent:4.13-2-alpine', runAsUser: '0', resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '1Gi', resourceLimitMemory: '1Gi'),
+                        containerTemplate(name: 'jnlp', image: 'quay.io/redhat-gpte/jenkins-inbound-agent:jdk21', runAsUser: '0', resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '1Gi', resourceLimitMemory: '1Gi'),
                         containerTemplate(name: 'ec', image: 'quay.io/enterprise-contract/ec-cli:362c6d6824695987bcdb7936c2efa35fd8ffb0e0', runAsUser: '0', command: 'cat', ttyEnabled: true, resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '1Gi', resourceLimitMemory: '1Gi'),
                         containerTemplate(name: 'skopeo', image: 'registry.redhat.io/ubi9/skopeo:9.5', runAsUser: '0', command: 'cat', ttyEnabled: true, resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '1Gi', resourceLimitMemory: '1Gi'),
                         containerTemplate(name: 'argocd', image: 'quay.io/redhat-gpte/argocd-cli:v2.8.4', runAsUser: '0', command: 'cat', ttyEnabled: true, resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '1Gi', resourceLimitMemory: '1Gi'),

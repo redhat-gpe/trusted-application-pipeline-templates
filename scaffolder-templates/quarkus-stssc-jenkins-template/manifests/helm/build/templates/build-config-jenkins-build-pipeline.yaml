@@ -24,7 +24,7 @@ spec:
                     secretEnvVar(key: 'COSIGN_PASSWORD_ENCODED', secretName: 'signing-secrets', secretKey: 'cosign.password'),
                     envVar(key: 'REKOR_URL', value: 'http://rekor-server.trusted-artifact-signer.svc'),
                     envVar(key: 'CERTIFICATE_OIDC_ISSUER', value: 'https://keycloak-rhsso{{ .Values.app.cluster }}/auth/realms/openshift'),
-                    envVar(key: 'CYCLONE_DX_URL', value: 'http://cyclonedx-bom-repo-server.cyclonedx.svc:8080'),
+                    envVar(key: 'CYCLONE_DX_URL', value: 'http://cyclonedx-bom-repo-server-cyclonedx{{ .Values.app.cluster }}'),
                     secretEnvVar(key: 'ROX_API_TOKEN', secretName: 'stackrox-token', secretKey: 'rox_api_token'),
                     envVar(key: 'ROX_CENTRAL_ENDPOINT', value: 'central.stackrox.svc:443'),
                     envVar(key: 'SONARQUBE_HOST_URL', value: 'http://sonarqube.sonarqube.svc:9000'),
@@ -39,7 +39,7 @@ spec:
                 idleMinutes: 1,
                 workspaceVolume: dynamicPVC(requestsSize: "2Gi"),
                 containers: [
-                        containerTemplate(name: 'jnlp', image: 'jenkins/inbound-agent:4.13-2-alpine', runAsUser: '0', resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '1Gi', resourceLimitMemory: '1Gi'),
+                        containerTemplate(name: 'jnlp', image: 'quay.io/redhat-gpte/jenkins-inbound-agent:jdk21', runAsUser: '0', resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '1Gi', resourceLimitMemory: '1Gi'),
                         containerTemplate(name: 'maven', image: 'maven:3.8.5-openjdk-17', runAsUser: '0', ttyEnabled: true, command: 'cat', resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '2Gi', resourceLimitMemory: '2Gi'),
                         containerTemplate(name: 'sonarqube', image: 'docker.io/sonarsource/sonar-scanner-cli:10.0', runAsUser: '0', ttyEnabled: true, command: 'cat', resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '2Gi', resourceLimitMemory: '2Gi'),
                         containerTemplate(name: 'syft', image: 'quay.io/redhat-appstudio/syft:v0.94.0', runAsUser: '0', ttyEnabled: true, command: 'cat', resourceRequestCpu: '1', resourceLimitCpu: '1', resourceRequestMemory: '2Gi', resourceLimitMemory: '2Gi'),
@@ -64,8 +64,6 @@ spec:
                     git branch: params.BRANCH ?: 'master',
                             url: env.GIT_URL
                     echo "git checkout done..."
-                }
-                stage("pre-reqs") {
                     configFileProvider([configFile(fileId: "merge.sboms.py", variable: 'MERGE_SBOMS')]) {
                       sh """
                         cat $MERGE_SBOMS > merge-sboms.py
@@ -255,138 +253,171 @@ spec:
                             COSIGN_PASSWORD=\$(echo \$COSIGN_PASSWORD_ENCODED | base64 -d) ./bin/cosign attest -y --key=./cosign.key --rekor-url=\$REKOR_URL --predicate "\$RESULTS/att-predicate.json" --type slsaprovenance1 \$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
                         """
                     }
-                }
-                stage("upload-sbom-to-cyclonedx-repo") {
-                    container('ubi-minimal') {
-                        sh """
-                            set +x
-                            curl -X POST \$CYCLONE_DX_URL/v1/bom -H "Content-Type: application/vnd.cyclonedx+json; version=1.4" -H "Accept: */*" -d @\$TEMP_DIR/files/sbom-cyclonedx.json -D /tmp/header.txt > /dev/null
-                            LOCATION=\$(cat /tmp/header.txt | grep location: | awk '{print \$2}' | sed 's|http:|https:|g')
-                            echo \$LOCATION
-                        """
+                    script {
+                      def image_url = readFile "${env.RESULTS}/IMAGE_URL"
+                      def image_digest = readFile "${env.RESULTS}/IMAGE_DIGEST"
+                      env.ACS_IMAGE = image_url + "@" + image_digest
+                      stash includes: 'results/tmp/files/sbom-cyclonedx.json', name: 'sbom'
                     }
                 }
-                stage("upload-sbom-to-tpa") {
-                    container('app-utils') {
-                        sh """
-                            set -o errexit -o nounset -o pipefail
+                parallel (
+                    "upload-sbom-to-cyclonedx-repo": {
+                        node(POD_LABEL) {
+                            stage("upload-sbom-to-cyclonedx-repo") {
+                                container('ubi-minimal') {
+                                    unstash 'sbom'
+                                    sh """
+                                        curl -X POST \$CYCLONE_DX_URL/v1/bom -H "Content-Type: application/vnd.cyclonedx+json; version=1.4" -H "Accept: */*" -d @\$TEMP_DIR/files/sbom-cyclonedx.json -D /tmp/header.txt > /dev/null
 
-                            SBOMS_DIR=\$TEMP_DIR/files
-                            WORKDIR=./wd
-                            mkdir \$WORKDIR
+                                        cat /tmp/header.txt
 
-                            filepath=\$TEMP_DIR/files/sbom-cyclonedx.json
+                                        LOCATION=\$(cat /tmp/header.txt | grep location: | awk '{print \$2}' | sed 's|http:|https:|g')
 
-                            sed -i 's|"./results/tmp/files/image|"'"$COMPONENT_ID"'|' \$filepath
+                                        echo location is \$LOCATION
+                                    """
+                                }
+                            }
+                        }
+                    },
+                    "upload-sbom-to-tpa": {
+                        node(POD_LABEL) {
+                            stage("upload-sbom-to-tpa") {
+                                container('app-utils') {
+                                    unstash 'sbom'
+                                    sh """
+                                        set -o errexit -o nounset -o pipefail
 
-                            sbom_id="sha256:\$(sha256sum "\$filepath" | cut -d ' ' -f 1)"
+                                        SBOMS_DIR=\$TEMP_DIR/files
+                                        WORKDIR=./wd
+                                        mkdir \$WORKDIR
 
-                            sbom_path="\$WORKDIR/\$sbom_id.json"
-                            ln -s "\$(realpath "\$filepath")" "\$sbom_path"
+                                        filepath=\$TEMP_DIR/files/sbom-cyclonedx.json
 
-                            cp --no-dereference "\$sbom_path" "\${sbom_path}.supported_version"
+                                        sed -i 's|"./results/tmp/files/image|"'"$COMPONENT_ID"'|' \$filepath
 
-                            curl_opts=(--silent --show-error --fail-with-body --retry 3)
+                                        sbom_id="sha256:\$(sha256sum "\$filepath" | cut -d ' ' -f 1)"
 
-                            openid_configuration_url="\${OIDC_ISSUER_URL%/}/.well-known/openid-configuration"
-                            echo "Getting OIDC issuer configuration from \$openid_configuration_url"
+                                        sbom_path="\$WORKDIR/\$sbom_id.json"
+                                        ln -s "\$(realpath "\$filepath")" "\$sbom_path"
 
-                            token_endpoint="\$(curl "\${curl_opts[@]}" "\$openid_configuration_url" | jq -r .token_endpoint)"
+                                        cp --no-dereference "\$sbom_path" "\${sbom_path}.supported_version"
 
-                            original_sbom_relpath="\$(realpath "\$sbom_path" --relative-base="\$SBOMS_DIR")"
-                            echo
-                            echo "--- Processing \$original_sbom_relpath ---"
+                                        curl_opts=(--silent --show-error --fail-with-body --retry 3)
 
-                            echo "Getting OIDC token from \$token_endpoint"
-                            token_response="\$(
-                              curl "\${curl_opts[@]}" \
-                                -u "\${OIDC_CLIENT_ID}:\${OIDC_CLIENT_SECRET}" \
-                                -d "grant_type=client_credentials" \
-                                "\$token_endpoint"
-                            )"
+                                        openid_configuration_url="\${OIDC_ISSUER_URL%/}/.well-known/openid-configuration"
+                                        echo "Getting OIDC issuer configuration from \$openid_configuration_url"
 
-                            access_token="\$(jq -r .access_token <<< "\$token_response")"
-                            token_type="\$(jq -r .token_type <<< "\$token_response")"
-                            expires_in="\$(jq -r ".expires_in // empty" <<< "\$token_response")"
+                                        token_endpoint="\$(curl "\${curl_opts[@]}" "\$openid_configuration_url" | jq -r .token_endpoint)"
 
-                            retry_max_time=0  # no limit
-                            if [[ -n "\$expires_in" ]]; then
-                                retry_max_time="\$expires_in"
-                            fi
+                                        original_sbom_relpath="\$(realpath "\$sbom_path" --relative-base="\$SBOMS_DIR")"
+                                        echo
+                                        echo "--- Processing \$original_sbom_relpath ---"
 
-                            sbom_id="\$(basename -s .json "\$sbom_path")"
-                            supported_version_of_sbom="\${sbom_path}.supported_version"
+                                        echo "Getting OIDC token from \$token_endpoint"
+                                        token_response="\$(
+                                        curl "\${curl_opts[@]}" \
+                                            -u "\${OIDC_CLIENT_ID}:\${OIDC_CLIENT_SECRET}" \
+                                            -d "grant_type=client_credentials" \
+                                            "\$token_endpoint"
+                                        )"
 
-                            echo "Uploading SBOM to \$BOMBASTIC_API_URL (with id=\$sbom_id)"
-                            # https://docs.trustification.dev/trustification/user/bombastic.html#publishing-an-sbom-doc
-                            curl "\${curl_opts[@]}" \
-                              --retry-max-time "\$retry_max_time" \
-                              -H "authorization: \$token_type \$access_token" \
-                              -H "transfer-encoding: chunked" \
-                              -H "content-type: application/json" \
-                              --data "@\$supported_version_of_sbom" \
-                              "\$BOMBASTIC_API_URL/api/v1/sbom?id=\$sbom_id"
-                        """
+                                        access_token="\$(jq -r .access_token <<< "\$token_response")"
+                                        token_type="\$(jq -r .token_type <<< "\$token_response")"
+                                        expires_in="\$(jq -r ".expires_in // empty" <<< "\$token_response")"
+
+                                        retry_max_time=0  # no limit
+                                        if [[ -n "\$expires_in" ]]; then
+                                            retry_max_time="\$expires_in"
+                                        fi
+
+                                        sbom_id="\$(basename -s .json "\$sbom_path")"
+                                        supported_version_of_sbom="\${sbom_path}.supported_version"
+
+                                        echo "Uploading SBOM to \$BOMBASTIC_API_URL (with id=\$sbom_id)"
+                                        # https://docs.trustification.dev/trustification/user/bombastic.html#publishing-an-sbom-doc
+                                        curl "\${curl_opts[@]}" \
+                                        --retry-max-time "\$retry_max_time" \
+                                        -H "authorization: \$token_type \$access_token" \
+                                        -H "transfer-encoding: chunked" \
+                                        -H "content-type: application/json" \
+                                        --data "@\$supported_version_of_sbom" \
+                                        "\$BOMBASTIC_API_URL/api/v1/sbom?id=\$sbom_id"
+                                    """
+                                }
+                            }
+                        }
                     }
-                }
-                stage("acs-image-scan") {
-                    container('ubi-minimal') {
-                        sh """
-                            #!/usr/bin/env bash
-                            set +x
-                            IMAGE=\$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
-                            curl -s -k -L -H "Authorization: Bearer \$ROX_API_TOKEN" \
-                              "https://\$ROX_CENTRAL_ENDPOINT/api/cli/download/roxctl-linux" \
-                              --output ./roxctl > /dev/null
-                            chmod +x ./roxctl > /dev/null
-                            ./roxctl image scan --insecure-skip-tls-verify \
-                              -e "\$ROX_CENTRAL_ENDPOINT" --image "\$IMAGE" --output table
-                        """
+                )
+                parallel (
+                    "acs-image-check": {
+                        node(POD_LABEL) {
+                            stage("acs-image-check") {
+                                container('ubi-minimal') {
+                                    sh """
+                                        #!/usr/bin/env bash
+                                        set +x
+                                        curl -s -k -L -H "Authorization: Bearer \$ROX_API_TOKEN" \
+                                        "https://\$ROX_CENTRAL_ENDPOINT/api/cli/download/roxctl-linux" \
+                                        --output ./roxctl > /dev/null
+                                        chmod +x ./roxctl > /dev/null
+                                        ./roxctl image check --insecure-skip-tls-verify \
+                                        -e "\$ROX_CENTRAL_ENDPOINT" --image "\$ACS_IMAGE" --output table
+                                    """
+                                }
+                            }
+                        }
+                    },
+                    "acs-image-scan": {
+                        node(POD_LABEL) {
+                            stage("acs-image-scan") {
+                                container('ubi-minimal') {
+                                    sh """
+                                        #!/usr/bin/env bash
+                                        set +x
+                                        curl -s -k -L -H "Authorization: Bearer \$ROX_API_TOKEN" \
+                                        "https://\$ROX_CENTRAL_ENDPOINT/api/cli/download/roxctl-linux" \
+                                        --output ./roxctl > /dev/null
+                                        chmod +x ./roxctl > /dev/null
+                                        ./roxctl image scan --insecure-skip-tls-verify \
+                                        -e "\$ROX_CENTRAL_ENDPOINT" --image "\$ACS_IMAGE" --output table
+                                    """
+                                }
+                            }
+                        }
+                    },
+                    "acs-deploy-check": {
+                        node(POD_LABEL) {
+                            stage("acs-deployment-check") {
+                                sh """
+                                    GITOPS_URL1=\$(echo \$GIT_URL | sed 's/https:\\/\\/*//')
+                                    GITOPS_URL2=\${GITOPS_URL1%%.git}
+                                    GITOPS_URL=https://\$GITOPS_URL2-gitops.git
+                                    rm -rf *
+                                    git clone \$GITOPS_URL
+                                """
+                                container('helm') {
+                                    sh """
+                                        cd \$COMPONENT_ID-gitops/helm/app
+                                        helm template --dry-run . | awk -vout=out -F": " '\$0~/^# Source: /{file=out"/"\$2; print "Creating "file; system ("mkdir -p \$(dirname "file"); echo -n "" > "file)} \$0!~/^#/ && \$0!="---"{print \$0 >> file}'
+                                    """
+                                }
+                                container('ubi-minimal') {
+                                    sh """
+                                        #!/usr/bin/env bash
+                                        set +x
+                                        cd \$COMPONENT_ID-gitops/helm/app/out/quarkus-template/templates
+                                        curl -s -k -L -H "Authorization: Bearer \$ROX_API_TOKEN" \
+                                        "https://\$ROX_CENTRAL_ENDPOINT/api/cli/download/roxctl-linux" \
+                                        --output ./roxctl > /dev/null
+                                        chmod +x ./roxctl > /dev/null
+                                        ./roxctl deployment check --insecure-skip-tls-verify \
+                                        -e "\$ROX_CENTRAL_ENDPOINT"  --file "deployment.yaml" --output table
+                                    """
+                                }
+                            }
+                        }
                     }
-                }
-                stage("acs-image-check") {
-                    container('ubi-minimal') {
-                        sh """
-                            #!/usr/bin/env bash
-                            set +x
-                            IMAGE=\$(cat \$RESULTS/IMAGE_URL)@\$(cat \$RESULTS/IMAGE_DIGEST)
-                            curl -s -k -L -H "Authorization: Bearer \$ROX_API_TOKEN" \
-                              "https://\$ROX_CENTRAL_ENDPOINT/api/cli/download/roxctl-linux" \
-                              --output ./roxctl > /dev/null
-                            chmod +x ./roxctl > /dev/null
-                            ./roxctl image check --insecure-skip-tls-verify \
-                              -e "\$ROX_CENTRAL_ENDPOINT" --image "\$IMAGE" --output table
-                        """
-                    }
-                }
-                stage("acs-deployment-check") {
-                    sh """
-                        GITOPS_URL1=\$(echo \$GIT_URL | sed 's/https:\\/\\/*//')
-                        GITOPS_URL2=\${GITOPS_URL1%%.git}
-                        GITOPS_URL=https://\$GITOPS_URL2-gitops.git
-                        rm -rf *
-                        git clone \$GITOPS_URL
-                    """
-                    container('helm') {
-                        sh """
-                            cd \$COMPONENT_ID-gitops/helm/app
-                            helm template --dry-run . | awk -vout=out -F": " '\$0~/^# Source: /{file=out"/"\$2; print "Creating "file; system ("mkdir -p \$(dirname "file"); echo -n "" > "file)} \$0!~/^#/ && \$0!="---"{print \$0 >> file}'
-                        """
-                    }
-                    container('ubi-minimal') {
-                        sh """
-                            #!/usr/bin/env bash
-                            set +x
-                            cd \$COMPONENT_ID-gitops/helm/app/out/quarkus-template/templates
-                            curl -s -k -L -H "Authorization: Bearer \$ROX_API_TOKEN" \
-                              "https://\$ROX_CENTRAL_ENDPOINT/api/cli/download/roxctl-linux" \
-                              --output ./roxctl > /dev/null
-                            chmod +x ./roxctl > /dev/null
-                            ./roxctl deployment check --insecure-skip-tls-verify \
-                              -e "\$ROX_CENTRAL_ENDPOINT"  --file "deployment.yaml" --output table
-                        """
-                    }
-                }
+                )
                 stage('resync') {
                     container('oc') {
                         sh """

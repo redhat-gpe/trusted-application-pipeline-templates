@@ -59,11 +59,35 @@ spec:
       ./roxctl image check \
         $( [ "$(params.insecure-skip-tls-verify)" = "true" ] && \
         echo -n "--insecure-skip-tls-verify") \
-        -e "$(params.rox_central_endpoint)" --image "$IMAGE" --output json > $(workspaces.reports.path)/image-check
+        -e "$(params.rox_central_endpoint)" --image "$IMAGE" --output json > roxctl_image_check.json
+      roxctl_exit_code=$?
+      echo $roxctl_exit_code > $(workspaces.reports.path)/roxctl_exit_code
+      if [ "$roxctl_exit_code" -eq 0 ]; then
+        echo "Image check ok"
+      else
+        echo "Image check detected violation"
+      fi
+      
+      cat roxctl_image_check.json >  $(workspaces.reports.path)/image-check
+
   - image: 'quay.io/lrangine/crda-maven:11.0'
     name: report
     script: |
         #!/bin/sh
         cat $(workspaces.reports.path)/image-check
+
+  - image: registry.access.redhat.com/ubi8/ubi-minimal
+    name: break-on-violation
+    script: |
+        #!/bin/sh
+        roxctl_exit_code=$(<$(workspaces.reports.path)/roxctl_exit_code)
+        echo "roxctl return code is: $roxctl_exit_code"
+        if [ "$roxctl_exit_code" -eq 0 ]; then
+          echo "roxctl image check finished successfully"
+        else
+          echo "Policy violation or roxctl failure - breaking the pipeline!"
+          exit 1
+        fi
+        
   workspaces:
     - name: reports
